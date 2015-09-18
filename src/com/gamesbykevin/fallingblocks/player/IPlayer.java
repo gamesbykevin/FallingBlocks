@@ -1,12 +1,13 @@
 package com.gamesbykevin.fallingblocks.player;
 
 import android.graphics.Canvas;
+import com.gamesbykevin.androidframework.resources.Disposable;
 
 /**
  * Methods required to implement for each player
  * @author GOD
  */
-public interface IPlayer 
+public interface IPlayer extends Disposable
 {
     /**
      * Method to update common elements
@@ -20,4 +21,9 @@ public interface IPlayer
      * @throws Exception
      */
     public void render(final Canvas canvas) throws Exception;
+    
+    /**
+     * Logic to reset game
+     */
+    public void reset();
 }

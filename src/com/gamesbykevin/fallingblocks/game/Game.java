@@ -2,76 +2,191 @@ package com.gamesbykevin.fallingblocks.game;
 
 import android.view.MotionEvent;
 import android.graphics.Canvas;
-import android.graphics.Color;
-import android.graphics.Paint;
-import android.graphics.Typeface;
 
 import com.gamesbykevin.androidframework.anim.Animation;
 import com.gamesbykevin.androidframework.base.Entity;
 import com.gamesbykevin.androidframework.resources.Disposable;
 
 import com.gamesbykevin.fallingblocks.assets.Assets;
+import com.gamesbykevin.fallingblocks.board.Board;
 import com.gamesbykevin.fallingblocks.game.controller.Controller;
+import com.gamesbykevin.fallingblocks.panel.GamePanel;
 
 import com.gamesbykevin.fallingblocks.player.*;
 import com.gamesbykevin.fallingblocks.screen.MainScreen;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * The main game logic will happen here
  * @author ABRAHAM
  */
-public class Game implements Disposable
+public class Game implements IGame
 {
-    //object to draw text
-    private Paint paint;
-    
     //our main screen object reference
     private final MainScreen screen;
     
-    //the human player
-    private Player player;
-    
-    //the background image
-    private Entity background;
+    //the players in the game
+    private List<Player> players;
     
     //the controller for our game
     private Controller controller;
     
-    public Game(final MainScreen screen)
+    /**
+     * The different game modes
+     */
+    public enum Mode
+    {
+        SinglePlayerHuman,
+        SinglePlayerCpu,
+        TwoPlayerVsCpu
+    }
+    
+    /**
+     * The amount of health damage to apply to opponent
+     */
+    private static final int VS_MODE_DAMAGE = -3;
+    
+    /**
+     * The amount of health to replenish to the player
+     */
+    private static final int VS_MODE_HEAL = 1;
+    
+    //the ratio to determine the piece fall speed
+    private static final float DIFFICULTY_RATIO_EASY = 1.0f;
+    private static final float DIFFICULTY_RATIO_NORMAL = 0.5f;
+    private static final float DIFFICULTY_RATIO_HARD = 0.25f;
+    
+    //the cpu pieces will fall faster
+    private static final float DIFFICULTY_CPU_EXTRA = 0.5f;
+    
+    /**
+     * The game difficulty
+     */
+    public enum Difficulty
+    {
+        Normal,
+        Hard,
+        Easy
+    }
+    
+    public Game(final MainScreen screen, final Mode mode, final Difficulty difficulty) throws Exception
     {
         //our main screen object reference
         this.screen = screen;
         
-        //create the text paint object
-        this.paint = new Paint();
-        this.paint.setColor(Color.WHITE);
-        this.paint.setTextSize(48f);
-        this.paint.setTypeface(Typeface.create(Typeface.DEFAULT, Typeface.BOLD));
-        
         //create a new player
-        this.player = new Human();
+        this.players = new ArrayList<Player>();
         
-        //create a new background
-        this.background = new Entity();
+        //setup the game mode
+        switch (mode)
+        {
+            case SinglePlayerHuman:
+                this.players.add(new Human(mode));
+                break;
+                
+            case SinglePlayerCpu:
+                this.players.add(new Cpu(mode));
+                break;
+                
+            case TwoPlayerVsCpu:
+                this.players.add(new Human(mode));
+                this.players.add(new Cpu(mode));
+                break;
+        }
         
-        //assign position, size
-        this.background.setX(0);
-        this.background.setY(0);
-        this.background.setWidth(Assets.getImage(Assets.ImageKey.Background).getWidth());
-        this.background.setHeight(Assets.getImage(Assets.ImageKey.Background).getHeight());
-        
-        //add animation to spritesheet
-        this.background.getSpritesheet().add(Assets.ImageKey.Background, new Animation(Assets.getImage(Assets.ImageKey.Background)));
+        //determine the piece drop rate
+        for (Player player : getPlayers())
+        {
+            //setup the drop delay
+            switch (difficulty)
+            {
+                case Easy:
+                    player.setDropDelay((long)(Board.COMPLETED_LINE_DELAY * DIFFICULTY_RATIO_EASY));
+                    break;
+                    
+                case Normal:
+                    player.setDropDelay((long)(Board.COMPLETED_LINE_DELAY * DIFFICULTY_RATIO_NORMAL));
+                    break;
+                    
+                case Hard:
+                    player.setDropDelay((long)(Board.COMPLETED_LINE_DELAY * DIFFICULTY_RATIO_HARD));
+                    break;
+            }
+            
+            //the cpu pieces will fall slightly faster to make the challenge more competitive
+            if (!player.isHuman())
+                player.setDropDelay((int)(player.getDropDelay() * DIFFICULTY_CPU_EXTRA));
+        }
         
         //create new controller
         this.controller = new Controller(this);
     }
     
-    public Player getPlayer()
+    /**
+     * Get the main screen object reference
+     * @return The main screen object reference
+     */
+    public MainScreen getMainScreen()
     {
-        return this.player;
+        return this.screen;
     }
     
+    /**
+     * Get the players
+     * @return The list of players in play
+     */
+    public final List<Player> getPlayers()
+    {
+        return this.players;
+    }
+    
+    @Override
+    public void reset()
+    {
+        if (getPlayers() != null)
+        {
+            for (Player player : getPlayers())
+            {
+                if (player != null)
+                    player.reset();
+            }
+            
+            //make sure no existing music is playing
+            Assets.stop(Assets.AudioKey.Music0);
+            Assets.stop(Assets.AudioKey.Music1);
+            
+            //play random song
+            Assets.play(GamePanel.RANDOM.nextBoolean() ? Assets.AudioKey.Music0 : Assets.AudioKey.Music1, true);
+        }
+    }
+    
+    /**
+     * Get our opponent
+     * @param player The current player searching for an opponent
+     * @return The player who does not have a matching id, indicating it is the other player (opponent)
+     */
+    public Player getOpponent(final Player player)
+    {
+        for (Player opponent : getPlayers())
+        {
+            //if the id's match it is the same player, skip
+            if (player.hasId(opponent.getId()))
+                continue;
+            
+            //the id's do not match, we found our opponent
+            return opponent;
+        }
+        
+        //this should not happen
+        return null;
+    }
+    
+    /**
+     * 
+     * @return 
+     */
     public Controller getController()
     {
         return this.controller;
@@ -94,24 +209,81 @@ public class Game implements Disposable
      */
     public void update() throws Exception
     {
-        if (getPlayer() != null)
-            getPlayer().update();
+        for (Player player : getPlayers())
+        {
+            if (player != null)
+            {
+                //if the player has game over
+                if (player.getBoard().hasGameover())
+                {
+                    //default message
+                    screen.getGameoverScreen().setMessage("Game Over");
+                    
+                    //if there is more than 1 player
+                    if (getPlayers().size() > 1)
+                    {
+                        if (player.isHuman())
+                        {
+                            screen.getGameoverScreen().setMessage("Game Over, You Lose");
+                        }
+                        else
+                        {
+                            screen.getGameoverScreen().setMessage("Game Over, You Win");
+                        }
+                    }
+                    
+                    //set the state to game over
+                    screen.setState(MainScreen.State.GameOver);
+                    break;
+                }
+                
+                //store the number of lines the player has completed
+                final int lines = player.getStats().getLines();
+                
+                //update the player
+                player.update();
+                
+                //if the player has completed at least 1 line, update
+                if (lines != player.getStats().getLines())
+                {
+                    //get the opponent
+                    final Player opponent = getOpponent(player);
+                    
+                    //if the opponent exists
+                    if (opponent != null)
+                    {
+                        //find the number of lines completed
+                        final int difference = player.getStats().getLines() - lines;
+                        
+                        //calculate the total heal/damage
+                        final int damage = difference * VS_MODE_DAMAGE;
+                        final int heal = difference * VS_MODE_HEAL;
+                        
+                        //update the players
+                        player.getStats().setHealth(player.getStats().getHealth() + heal);
+                        opponent.getStats().setHealth(opponent.getStats().getHealth() + damage);
+                    }
+                }
+            }
+        }
     }
     
     @Override
     public void dispose()
     {
-        //recycle these objects
-        if (player != null)
+        if (players != null)
         {
-            player.dispose();
-            player = null;
-        }
-        
-        if (background != null)
-        {
-            background.dispose();
-            background = null;
+            for (Player player : getPlayers())
+            {
+                if (player != null)
+                {
+                    player.dispose();
+                    player = null;
+                }
+            }
+            
+            players.clear();
+            players = null;
         }
         
         if (controller != null)
@@ -128,13 +300,15 @@ public class Game implements Disposable
      */
     public void render(final Canvas canvas) throws Exception
     {
-        //draw the background first
-        if (background != null)
-            background.render(canvas);
-        
         //draw the player, etc....
-        if (getPlayer() != null)
-            getPlayer().render(canvas);
+        if (getPlayers() != null)
+        {
+            for (Player player : getPlayers())
+            {
+                if (player != null)
+                    player.render(canvas);
+            }
+        }
         
         //draw the game controller
         if (getController() != null)

@@ -1,19 +1,15 @@
 package com.gamesbykevin.fallingblocks.player;
 
+import com.gamesbykevin.fallingblocks.game.Game;
+
 /**
- * The human
+ * The human controlled player
  * @author GOD
  */
 public final class Human extends Player
 {
-    public Human()
+    public Human(final Game.Mode mode) throws Exception
     {
-        super();
-    }
-    
-    @Override
-    public void update() throws Exception
-    {
-        super.update();
+        super(mode, true);
     }
 }

@@ -6,21 +6,15 @@ import android.graphics.Paint;
 
 import com.gamesbykevin.androidframework.anim.Animation;
 import com.gamesbykevin.androidframework.base.Entity;
-import com.gamesbykevin.androidframework.resources.Disposable;
-import com.gamesbykevin.fallingblocks.assets.Assets;
 
 import com.gamesbykevin.fallingblocks.board.piece.Block;
 import com.gamesbykevin.fallingblocks.board.piece.Piece;
-import com.gamesbykevin.fallingblocks.panel.GamePanel;
-
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * The board
  * @author GOD
  */
-public final class Board extends Entity implements Disposable
+public final class Board extends Entity implements IBoard
 {
     //the table containing the blocks
     private Block[][] blocks;
@@ -53,47 +47,61 @@ public final class Board extends Entity implements Disposable
     //our paint object
     private Paint paint;
     
+    //is the game over, board filled up
+    private boolean gameover = false;
+    
     /**
      * Create a new board
+     * @param dimension The size of a single block to determine the size of the board
      */
-    public Board()
+    public Board(final int dimension)
     {
+        super();
+        
+        //set default dimensions
+        super.setWidth(dimension * COLS);
+        super.setHeight(dimension * ROWS);
+        
         //create new board array
         this.blocks = new Block[ROWS][COLS];
-        
-        //list of different piece types
-        List<Piece.Type> pieceTypes = new ArrayList<Piece.Type>();
-        
-        //add each to a list
-        for (Piece.Type type : Piece.Type.values())
+    }
+    
+    /**
+     * Reset the board.<br>
+     */
+    public void reset()
+    {
+        for (int col = 0; col < COLS; col++)
         {
-            pieceTypes.add(type);
-        }
-        
-        for (int col = 0; col < 5; col++)
-        {
-            for (int row = 0; row < 2; row++)
+            for (int row = 0; row < ROWS; row++)
             {
-                if (pieceTypes.isEmpty())
-                    continue;
-                
-                //calculate starting coordinates
-                final int x = col * Block.DIMENSION;
-                final int y = row * Block.DIMENSION;
-                
-                //create a new animation
-                Animation animation = new Animation(Assets.getImage(Assets.ImageKey.Blocks), x, y, Block.DIMENSION, Block.DIMENSION);
-                        
-                //pick random type
-                final int index = GamePanel.RANDOM.nextInt(pieceTypes.size());
-                
-                //add animation to sprite sheet
-                super.getSpritesheet().add(pieceTypes.get(index), animation);
-                
-                //remove random choice so it won't be chosen again
-                pieceTypes.remove(index);
+                setBlock(col, row, null);
             }
         }
+        
+        //we don't have any completed lines
+        setComplete(false);
+        
+        //the game is not over
+        setGameover(false);
+    }
+    
+    /**
+     * Is the game over?
+     * @return true = yes, false = no
+     */
+    public boolean hasGameover()
+    {
+        return this.gameover;
+    }
+    
+    /**
+     * Assign game over.
+     * @param gameover true = yes, false = no
+     */
+    public void setGameover(final boolean gameover)
+    {
+        this.gameover = gameover;
     }
     
     /**
@@ -126,6 +134,24 @@ public final class Board extends Entity implements Disposable
     public boolean hasComplete()
     {
         return this.complete;
+    }
+    
+    /**
+     * Add the piece to the board temporarily
+     * @param piece The piece we want to add
+     */
+    public void addTemp(final Piece piece)
+    {
+        //check each block in the piece
+        for (Block block : piece.getBlocks())
+        {
+            //adjust the absolute position
+            final int col = (int)(block.getCol() + piece.getCol());
+            final int row = (int)(block.getRow() + piece.getRow());
+            
+            //add it to the board
+            setBlock(col, row, block);
+        }
     }
     
     /**
@@ -162,7 +188,7 @@ public final class Board extends Entity implements Disposable
             for (int row = 0; row < getBlocks().length; row++)
             {
                 //make sure the block exists
-                if (getBlock(col, row) != null)
+                if (hasBlock(col, row))
                 {
                     //if the block is part of the piece, remove it
                     if (getBlock(col, row).hasGroup(piece.getGroup()))
@@ -184,13 +210,24 @@ public final class Board extends Entity implements Disposable
             for (int row = 0; row < getBlocks().length; row++)
             {
                 //if a block exists here, and the block is at the same location as the piece
-                if (getBlock(col, row) != null && piece.hasBlock(col, row))
+                if (hasBlock(col, row) && piece.hasBlock(col, row))
                     return true;
             }
         }
         
         //no blocks exist here, return false
         return false;
+    }
+    
+    /**
+     * Does a block already occupy the specified location on the board?
+     * @param col Column
+     * @param row Row
+     * @return true if a block exists at the specified location, otherwise false
+     */
+    public boolean hasBlock(final int col, final int row)
+    {
+        return (getBlock(col, row) != null);
     }
     
     /**
@@ -273,7 +310,7 @@ public final class Board extends Entity implements Disposable
         
         //draw border
         paint.setStyle(Paint.Style.STROKE);
-        paint.setColor(Color.BLACK);
+        paint.setColor(Color.WHITE);
         canvas.drawRect(getDestination(), paint);    
     }
 }

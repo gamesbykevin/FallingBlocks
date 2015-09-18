@@ -1,6 +1,14 @@
 package com.gamesbykevin.fallingblocks.board;
 
+import com.gamesbykevin.androidframework.anim.Animation;
+import com.gamesbykevin.androidframework.base.Cell;
+import com.gamesbykevin.androidframework.resources.Images;
+import com.gamesbykevin.fallingblocks.assets.Assets;
 import com.gamesbykevin.fallingblocks.board.piece.Block;
+import com.gamesbykevin.fallingblocks.board.piece.Piece;
+import com.gamesbykevin.fallingblocks.panel.GamePanel;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * This class will contain helper methods
@@ -8,6 +16,165 @@ import com.gamesbykevin.fallingblocks.board.piece.Block;
  */
 public final class BoardHelper 
 {
+    /**
+     * No height value
+     */
+    private static final int NO_HEIGHT = 0;
+    
+    /**
+     * Calculate the aggregate height
+     * @param board The board we want to check
+     * @return The total height of each column on the board
+     */
+    public static final int getAggregateHeight(final Board board)
+    {
+        //start with 0 height
+        int height = NO_HEIGHT;
+        
+        //calculate the height of each column
+        for (int col = 0; col < Board.COLS; col++)
+        {
+            height += getColumnHeight(board, col);
+        }
+        
+        //return result
+        return height;
+    }
+    
+    private static int getColumnHeight(final Board board, final int col)
+    {
+        for (int row = 0; row < Board.ROWS; row++)
+        {
+            //if there is a block add the height
+            if (board.hasBlock(col, row))
+            {
+                //return height
+                return (Board.ROWS - row);
+            }
+        }
+        
+        //return no height
+        return NO_HEIGHT;
+    }
+    
+    /**
+     * Count the number of holes on the board.<br>
+     * A hole is an empty space on the board that has a filled block above it
+     * @param board The board we want to check
+     * @return The total number of empty blocks that are below a filled block
+     */
+    public static final int getHoleCount(final Board board)
+    {
+        int count = 0;
+        
+        for (int col = 0; col < Board.COLS; col++)
+        {
+            //did we hit a block yet
+            boolean hitBlock = false;
+            
+            for (int row = 0; row < Board.ROWS; row++)
+            {
+                //if we found a block, flag it
+                if (board.hasBlock(col, row))
+                {
+                    hitBlock = true;
+                }
+                else
+                {
+                    //if this is not a block and we already found one, then count the hole
+                    if (hitBlock)
+                        count++;
+                }
+            }
+        }
+        
+        //return the total number of holes
+        return count;
+    }
+    
+    /**
+     * Get the total height difference between each neighboring column
+     * @param board The board we want to check
+     * @return The total bumpiness between columns
+     */
+    public static final int getTotalBumpiness(final Board board)
+    {
+        int total = 0;
+        
+        for (int col = 0; col < Board.COLS - 1; col++)
+        {
+            //get the height of the 2 neighboring columns
+            final int height1 = getColumnHeight(board, col);
+            final int height2 = getColumnHeight(board, col + 1);
+            
+            //calculate bumpiness and add to total
+            if (height1 > height2)
+            {
+                total += (height1 - height2);
+            }
+            else
+            {
+                total += (height2 - height1);
+            }
+        }
+        
+        //return total bumpiness
+        return total;
+    }
+    
+    /**
+     * Assign animations
+     * @param board The board to assign animations to
+     */
+    public static final void assignAnimations(final Board board)
+    {
+        //create list of locations
+        List<Cell> options = new ArrayList<Cell>();
+        options.add(new Cell(0,0));
+        options.add(new Cell(1,0));
+        options.add(new Cell(2,0));
+        options.add(new Cell(3,0));
+        options.add(new Cell(4,0));
+        options.add(new Cell(0,1));
+        options.add(new Cell(1,1));
+        options.add(new Cell(2,1));
+        options.add(new Cell(3,1));
+        
+        //animation object
+        Animation animation;
+        
+        //pick a random animation for each piece type
+        for (Piece.Type type : Piece.Type.values())
+        {
+            //we will ignore the cleared type for now
+            if (type == Piece.Type.Cleared)
+                continue;
+            
+            //pick random index
+            final int index = GamePanel.RANDOM.nextInt(options.size());
+            
+            //calculate starting coordinates
+            final int x = (int)options.get(index).getCol() * Block.DIMENSION_ANIMATION;
+            final int y = (int)options.get(index).getRow() * Block.DIMENSION_ANIMATION;
+
+            //create a new animation
+            animation = new Animation(Images.getImage(Assets.ImageKey.Blocks), x, y, Block.DIMENSION_ANIMATION, Block.DIMENSION_ANIMATION);
+            
+            //add animation to sprite sheet
+            board.getSpritesheet().add(type, animation);
+            
+            //remove option from list
+            options.remove(index);
+        }
+        
+        //here is where the cleared animation is
+        final int x = (4 * Block.DIMENSION_ANIMATION);
+        final int y = (1 * Block.DIMENSION_ANIMATION);
+        
+        //add the cleared animation last
+        board.getSpritesheet().add(Piece.Type.Cleared, new Animation(Images.getImage(Assets.ImageKey.Blocks), x, y, Block.DIMENSION_ANIMATION, Block.DIMENSION_ANIMATION));
+    }
+    
     /**
      * Clear all blocks in the specified row
      * @param board The board we want to manipulate
@@ -58,6 +225,28 @@ public final class BoardHelper
         
         //all blocks exist in this row, return true
         return true;
+    }
+    
+    /**
+     * For each row that is completed.<br>
+     * Each block in that row will have the Piece.Type.Cleared
+     * @param board The board we are changing
+     */
+    public static final void markCompletedRows(final Board board)
+    {
+        //check each row
+        for (int row = 0; row < Board.ROWS; row++)
+        {
+            //if the current row is complete, change piece type for a blocks in the row
+            if (hasCompletedRow(board, row))
+            {
+                //mark all columns cleared
+                for (int col = 0; col < Board.COLS; col++)
+                {
+                    board.getBlock(col, row).setType(Piece.Type.Cleared);
+                }
+            }
+        }
     }
     
     /**

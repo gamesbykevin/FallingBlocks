@@ -2,11 +2,11 @@ package com.gamesbykevin.fallingblocks.board.piece;
 
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
-import android.graphics.Rect;
 import java.util.UUID;
 
 import com.gamesbykevin.androidframework.base.Entity;
 import com.gamesbykevin.androidframework.resources.Disposable;
+import com.gamesbykevin.fallingblocks.board.Board;
 
 /**
  * A bunch of blocks create a piece
@@ -14,46 +14,60 @@ import com.gamesbykevin.androidframework.resources.Disposable;
  */
 public final class Block extends Entity implements Disposable
 {
-    //assigned color for the block
-    private final int color;
-    
     //all blocks that create a piece are part of the same group
     private final UUID group;
     
     /**
-     * The pixel width/height of 1 block
+     * The pixel width/height of 1 block animation
      */
-    public static final int DIMENSION = 32;
+    public static final int DIMENSION_ANIMATION = 32;
+    
+    /**
+     * The pixel dimension of a regular size block
+     */
+    public static final int DIMENSION_REGULAR = 48;
+    
+    /**
+     * The pixel dimension of a regular size block
+     */
+    public static final int DIMENSION_SMALL = 24;
+    
+    /**
+     * The dimension of a large size block
+     */
+    public static final int DIMENSION_LARGE = 64;
     
     //the type of piece this block belongs to
-    private final Piece.Type type;
+    private Piece.Type type;
     
     /**
      * Create a block at the specified location, color, and group
      * @param col Column
      * @param row Row
-     * @param color Color
      * @param group Group this block belongs to
      * @param type The type of piece this block belongs to
      */
-    public Block(final int col, final int row, final int color, final UUID group, final Piece.Type type)
+    public Block(final int col, final int row, final UUID group, final Piece.Type type)
     {
         //save the location
         super.setCol(col);
         super.setRow(row);
         
-        //store the color
-        this.color = color;
-        
         //assign the group
         this.group = group;
         
         //store the piece type
+        setType(type);
+    }
+    
+    /**
+     * Assign the piece type.<br>
+     * This will have an effect on the image render.
+     * @param type The desired piece type
+     */
+    public final void setType(final Piece.Type type)
+    {
         this.type = type;
-        
-        //assign dimensions
-        super.setWidth(DIMENSION);
-        super.setHeight(DIMENSION);
     }
     
     /**
@@ -102,19 +116,11 @@ public final class Block extends Entity implements Disposable
         super.setRow(row);
     }
     
-    /**
-     * Get the assigned color
-     * @return The color of the block when rendered
-     */
-    public int getColor()
-    {
-        return this.color;
-    }
-    
     @Override
     public void dispose()
     {
         //recycle objects here
+        super.dispose();
     }
     
     /**

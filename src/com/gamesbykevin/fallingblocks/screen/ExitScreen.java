@@ -6,23 +6,24 @@ import android.graphics.Paint;
 import android.graphics.Rect;
 import android.view.MotionEvent;
 
+import com.gamesbykevin.androidframework.awt.Button;
 import com.gamesbykevin.androidframework.resources.Disposable;
 import com.gamesbykevin.androidframework.resources.Font;
+import com.gamesbykevin.androidframework.resources.Images;
 import com.gamesbykevin.androidframework.screen.Screen;
-
 import com.gamesbykevin.fallingblocks.assets.Assets;
 import com.gamesbykevin.fallingblocks.panel.GamePanel;
 
 /**
- * The pause screen
- * @author ABRAHAM
+ * The exit screen, when the player wants to go back to the menu
+ * @author GOD
  */
-public class PauseScreen implements Screen, Disposable
+public class ExitScreen implements Screen, Disposable
 {
     /**
      * Custom message displayed on screen
      */
-    private static final String MESSAGE = "Paused";
+    private static final String MESSAGE = "Go back to menu?";
     
     //the dimensions of the text message above
     private final int pixelW, pixelH;
@@ -33,10 +34,10 @@ public class PauseScreen implements Screen, Disposable
     //object to paint background
     private Paint paint;
     
-    //store the previous state
-    private MainScreen.State previous;
+    //the button to confirm or cancel
+    private Button exitConfirm, exitCancel;
     
-    public PauseScreen(final MainScreen screen)
+    public ExitScreen(final MainScreen screen)
     {
         //store our parent reference
         this.screen = screen;
@@ -44,7 +45,7 @@ public class PauseScreen implements Screen, Disposable
         //create paint text object
         this.paint = new Paint();
         this.paint.setColor(Color.WHITE);
-        this.paint.setTextSize(64f);
+        this.paint.setTextSize(48f);
         this.paint.setTypeface(Font.getFont(Assets.FontKey.Default));
         
         //create temporary rectangle
@@ -56,27 +57,18 @@ public class PauseScreen implements Screen, Disposable
         //store the dimensions
         pixelW = tmp.width();
         pixelH = tmp.height();
-    }
-    
-    /**
-     * Set the previous state.<br>
-     * We need this, so when un-pause we know where to go back
-     * @param previous The previous state
-     */
-    public void setStatePrevious(final MainScreen.State previous)
-    {
-        //only store if not pause
-        if (previous != MainScreen.State.Paused)
-            this.previous = previous;
-    }
-    
-    /**
-     * Get the previous state
-     * @return The previous state before the game was paused
-     */
-    public MainScreen.State getStatePrevious()
-    {
-        return this.previous;
+        
+        //create buttons
+        this.exitCancel  = new Button(Images.getImage(Assets.ImageKey.ExitCancel));
+        this.exitConfirm = new Button(Images.getImage(Assets.ImageKey.ExitConfirm));
+        
+        //position buttons
+        this.exitCancel.setX(670);
+        this.exitCancel.setY(875);
+        this.exitCancel.updateBounds();
+        this.exitConfirm.setX(190);
+        this.exitConfirm.setY(875);
+        this.exitConfirm.updateBounds();
     }
     
     @Override
@@ -84,10 +76,23 @@ public class PauseScreen implements Screen, Disposable
     {
         if (event.getAction() == MotionEvent.ACTION_UP)
         {
-            //return to the previous state
-            screen.setState(previous);
+            if (this.exitCancel.contains(x, y))
+            {
+                //if cancel, go back to game
+                screen.setState(MainScreen.State.Running);
+                
+                //play sound effect
+                Assets.play(Assets.AudioKey.SettingChange);
+            }
+            else if (this.exitConfirm.contains(x, y))
+            {
+                //if confirm, go back to menu
+                screen.setState(MainScreen.State.Ready);
+                
+                //play sound effect
+                Assets.play(Assets.AudioKey.SettingChange);
+            }
             
-            //return true
             return true;
         }
         
@@ -112,11 +117,27 @@ public class PauseScreen implements Screen, Disposable
             //draw text
             canvas.drawText(MESSAGE, x, y, paint);
         }
+        
+        //render buttons
+        this.exitConfirm.render(canvas);
+        this.exitCancel.render(canvas);
     }
     
     @Override
     public void dispose()
     {
+        if (exitConfirm != null)
+        {
+            exitConfirm.dispose();
+            exitConfirm = null;
+        }
+        
+        if (exitCancel != null)
+        {
+            exitCancel.dispose();
+            exitCancel = null;
+        }
+        
         if (paint != null)
             paint = null;
     }

@@ -4,13 +4,11 @@ import android.graphics.Canvas;
 import com.gamesbykevin.androidframework.base.Cell;
 import com.gamesbykevin.androidframework.resources.Disposable;
 
-import android.graphics.Color;
-import android.graphics.Bitmap;
 import com.gamesbykevin.fallingblocks.board.Board;
+import com.gamesbykevin.fallingblocks.panel.GamePanel;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Random;
 import java.util.UUID;
 
 /**
@@ -38,48 +36,25 @@ public final class Piece extends Cell implements Disposable
      */
     public enum Type
     {
-        PieceOne(Color.RED), 
-        PieceTwo(Color.GREEN),
-        PieceThree(Color.BLUE),
-        PieceFour(Color.CYAN),
-        PieceFive(Color.YELLOW),
-        PieceSix(Color.WHITE),
-        PieceSeven(Color.GRAY),
+        PieceOne, 
+        PieceTwo,
+        PieceThree,
+        PieceFour,
+        PieceFive,
+        PieceSix,
+        PieceSeven,
+        Cleared
         ;
-        
-        private final int color;
-        
-        private Type(final int color)
-        {
-            this.color = color;
-        }
-        
-        private int getColor()
-        {
-            return this.color;
-        }
     }
     
     /**
      * Create a random piece
-     * @param random Object used to make random decisions
      * @param col Column
      * @param row Row
+     * @param dimension (width/height) of 1 single block
      * @throws Exception 
      */
-    public Piece(final Random random, final int col, final int row) throws Exception
-    {
-        this(Type.values()[random.nextInt(Type.values().length)], col, row);
-    }
-    
-    /**
-     * Create a piece of specified type
-     * @param type The desired piece type
-     * @param col Column
-     * @param row Row
-     * @throws Exception 
-     */
-    public Piece(final Type type, final int col, final int row) throws Exception
+    public Piece(final int col, final int row, final int dimension) throws Exception
     {
         //call parent constructor
         super(col, row);
@@ -90,7 +65,9 @@ public final class Piece extends Cell implements Disposable
         //create new list of blocks
         this.blocks = new ArrayList<Block>();
         
-        //create the piece depending on the type
+        final Type type = getRandomType();
+        
+        //create the piece of random type
         switch (type)
         {
             /**
@@ -163,9 +140,43 @@ public final class Piece extends Cell implements Disposable
                 add(1,  1, type);
                 break;
                 
+            case Cleared:
+                throw new Exception("A new piece can't be created of this type.");
+                
             default:
                 throw new Exception("Piece type not setup here " + type.toString());
         }
+        
+        //assign the dimensions
+        for (Block block : getBlocks())
+        {
+            block.setWidth(dimension);
+            block.setHeight(dimension);
+        }
+    }
+    
+    /**
+     * Get random piece type appropriate for a new piece
+     * @return Random piece type
+     */
+    private static Type getRandomType()
+    {
+        //create our list
+        List<Type> types = new ArrayList<Type>();
+        
+        //check each type
+        for (Type type : Type.values())
+        {
+            //this is not a valid piece type, for a new piece
+            if (type == Type.Cleared)
+                continue;
+            
+            //add to list
+            types.add(type);
+        }
+        
+        //return random result
+        return types.get(GamePanel.RANDOM.nextInt(types.size()));
     }
     
     /**
@@ -274,6 +285,24 @@ public final class Piece extends Cell implements Disposable
     }
     
     /**
+     * Does any block in this piece have the specified row?
+     * @param row The row we are checking for
+     * @return true if the row matches, false otherwise
+     */
+    public boolean hasRow(final int row)
+    {
+        for (Block block : getBlocks())
+        {
+            //if the row matches, return true
+            if (getRow() + block.getRow() == row)
+                return true;
+        }
+        
+        //none of the blocks were on the specified row
+        return false;
+    }
+    
+    /**
      * Get the blocks.
      * @return The list of blocks that make up this piece
      */
@@ -320,7 +349,6 @@ public final class Piece extends Cell implements Disposable
             //if the row is out of bounds
             if (row >= Board.ROWS)
                 return false;
-            
         }
         
         //piece is within board boundary, return true
@@ -335,7 +363,7 @@ public final class Piece extends Cell implements Disposable
      */
     private void add(final int col, final int row, final Type type)
     {
-        this.blocks.add(new Block(col, row, type.getColor(), getGroup(), type));
+        this.blocks.add(new Block(col, row, getGroup(), type));
     }
     
     @Override
@@ -358,23 +386,63 @@ public final class Piece extends Cell implements Disposable
     }
     
     /**
-     * Render the block
+     * Render the block on the board
      * @param canvas Canvas to write pixel data
-     * @param image The image of the block
-     * @param x start x-coordinate
-     * @param y start y-coordinate
+     * @param board The board we are rendering on
      * @throws Exception
      */
-    public void render(final Canvas canvas, final Bitmap image, final int x, final int y) throws Exception
+    public void render(final Canvas canvas, final Board board) throws Exception
+    {
+        render(canvas, board, 1f);
+    }
+    
+    /**
+     * Render the block on the board
+     * @param canvas Canvas to write pixel data
+     * @param board The board we are rendering on
+     * @param scale The ratio to resize the piece
+     * @throws Exception
+     */
+    public void render(final Canvas canvas, final Board board, final float scale) throws Exception
+    {
+        render(canvas, board, scale, (int)board.getX(), (int)board.getY());
+    }
+    
+    /**
+     * Render the block on the board at the specified starting location
+     * @param canvas Canvas to write pixel data
+     * @param board The board we are rendering on
+     * @param scale The ratio to resize the piece
+     * @param startX The desired starting x-coordinate of the piece
+     * @param startY The desired starting y-coordinate of the piece
+     * @throws Exception
+     */
+    public void render(final Canvas canvas, final Board board, final float scale, final int startX, final int startY) throws Exception
     {
         for (Block block : getBlocks())
         {
-            //adjust location
-            final int blockX = x + (int)(block.getCol() * Block.DIMENSION);
-            final int blockY = y + (int)(block.getRow() * Block.DIMENSION);
+            //store the dimensions
+            final double w = block.getWidth();
+            final double h = block.getHeight();
+            
+            //adjust dimensions
+            block.setWidth(w * scale);
+            block.setHeight(h * scale);
+            
+            //calculate starting coordinate of the piece
+            final int x = (int)(startX + (getCol() * block.getWidth()));
+            final int y = (int)(startY + (getRow() * block.getHeight()));
+            
+            //adjust location for the current block
+            final int blockX = x + (int)(block.getCol() * block.getWidth());
+            final int blockY = y + (int)(block.getRow() * block.getHeight());
             
             //render the block
-            block.render(canvas, image, blockX, blockY);
+            block.render(canvas, board.getSpritesheet().get(block.getType()).getImage(), blockX, blockY);
+            
+            //restore dimensions
+            block.setWidth(w);
+            block.setHeight(h);
         }
     }
 }

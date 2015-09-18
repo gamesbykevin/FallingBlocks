@@ -1,8 +1,6 @@
 package com.gamesbykevin.fallingblocks.panel;
 
-import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
-import android.media.MediaPlayer;
 import android.view.MotionEvent;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
@@ -10,7 +8,6 @@ import android.view.SurfaceView;
 import com.gamesbykevin.androidframework.resources.Disposable;
 
 import com.gamesbykevin.fallingblocks.screen.MainScreen;
-import com.gamesbykevin.fallingblocks.R;
 import com.gamesbykevin.fallingblocks.FallingBlocks;
 import com.gamesbykevin.fallingblocks.assets.Assets;
 import com.gamesbykevin.fallingblocks.thread.MainThread;
@@ -43,7 +40,7 @@ public class GamePanel extends SurfaceView implements SurfaceHolder.Callback, Di
     
     /**
      * Create a new game panel
-     * @param activity Our main activity 
+     * @param activity Our main activity reference
      */
     public GamePanel(final FallingBlocks activity)
     {
@@ -52,12 +49,19 @@ public class GamePanel extends SurfaceView implements SurfaceHolder.Callback, Di
         
         //store context
         this.activity = activity;
-        
+            
         //make game panel focusable = true so it can handle events
         super.setFocusable(true);
         
-        //load game resources
-        loadAssets();
+        try
+        {
+            //load game resources
+            Assets.load(getActivity());
+        }
+        catch (Exception e)
+        {
+            e.printStackTrace();
+        }
     }
     
     @Override
@@ -120,26 +124,6 @@ public class GamePanel extends SurfaceView implements SurfaceHolder.Callback, Di
     }
     
     /**
-     * Load game resources, if a resource is already loaded nothing will happen
-     */
-    private void loadAssets()
-    {
-        //load images
-        Assets.assignImage(Assets.ImageKey.Background,      BitmapFactory.decodeResource(getResources(), R.drawable.background));
-        Assets.assignImage(Assets.ImageKey.Control_Left,    BitmapFactory.decodeResource(getResources(), R.drawable.left));
-        Assets.assignImage(Assets.ImageKey.Control_Right,   BitmapFactory.decodeResource(getResources(), R.drawable.right));
-        Assets.assignImage(Assets.ImageKey.Control_Up,      BitmapFactory.decodeResource(getResources(), R.drawable.up));
-        Assets.assignImage(Assets.ImageKey.Control_Down,    BitmapFactory.decodeResource(getResources(), R.drawable.down));
-        Assets.assignImage(Assets.ImageKey.Control_Mute,    BitmapFactory.decodeResource(getResources(), R.drawable.mute));
-        Assets.assignImage(Assets.ImageKey.Control_UnMute,  BitmapFactory.decodeResource(getResources(), R.drawable.unmute));
-        Assets.assignImage(Assets.ImageKey.Control_Pause,   BitmapFactory.decodeResource(getResources(), R.drawable.pause));
-        Assets.assignImage(Assets.ImageKey.Blocks,          BitmapFactory.decodeResource(getResources(), R.drawable.fallingblocks));
-        
-        //load audio
-        //Assets.assignAudio(Assets.AudioKey.Win, MediaPlayer.create(getActivity(), R.raw.sound_win));
-    }
-    
-    /**
      * Now that the surface has been created we can create our game objects
      * @param holder 
      */
@@ -152,7 +136,7 @@ public class GamePanel extends SurfaceView implements SurfaceHolder.Callback, Di
             RANDOM = new Random(System.nanoTime());
             
             //load game resources
-            loadAssets();
+            Assets.load(getActivity());
             
             //make sure the screen is created first before the thread starts
             if (this.screen == null)

@@ -1,89 +1,141 @@
 package com.gamesbykevin.fallingblocks.player;
 
 import android.graphics.Canvas;
-import android.graphics.Paint;
 
 import com.gamesbykevin.androidframework.resources.Disposable;
+import com.gamesbykevin.fallingblocks.assets.Assets;
 
 import com.gamesbykevin.fallingblocks.board.Board;
 import com.gamesbykevin.fallingblocks.board.BoardHelper;
 import com.gamesbykevin.fallingblocks.board.piece.Block;
 import com.gamesbykevin.fallingblocks.board.piece.Piece;
-import com.gamesbykevin.fallingblocks.panel.GamePanel;
-import com.gamesbykevin.fallingblocks.thread.MainThread;
+import com.gamesbykevin.fallingblocks.game.Game;
+import com.gamesbykevin.fallingblocks.player.stats.Stats;
 
 /**
  * The player in the game.<br>
  * Each player has their own board
  * @author GOD
  */
-public abstract class Player implements IPlayer, Disposable
+public abstract class Player extends PlayerHelper implements IPlayer, Disposable
 {
     //the board where pieces will fall
     private Board board;
     
-    //the time of the previous piece drop
-    private long time;
-    
     //the current and next piece
     private Piece current, next;
     
-    //paint object to render blocks, etc...
-    private Paint paint;
+    //our stats object
+    private Stats stats;
     
-    /**
-     * Different action's the player can make
-     */
-    public enum Action
-    {
-        MOVE_DOWN, MOVE_RIGHT, MOVE_LEFT, MOVE_ROTATE
-    }
-    
-    //the desired action
-    private Action action;
+    //the game mode
+    private final Game.Mode mode;
     
     /**
      * Create a new player
+     * @param mode The desired game mode
+     * @param human Is this player human?
+     * @throws Exception
      */
-    protected Player()
+    protected Player(final Game.Mode mode, final boolean human) throws Exception
     {
-        //create a new board
-        this.board = new Board();
+        super(human);
         
-        getBoard().setX(50);
-        getBoard().setY(50);
-        getBoard().setWidth(Block.DIMENSION * Board.COLS);
-        getBoard().setHeight(Block.DIMENSION * Board.ROWS);
+        //store the game mode
+        this.mode = mode;
+        
+        //create new stats object
+        this.stats = new Stats((getMode() == Game.Mode.TwoPlayerVsCpu), isHuman() ? "Player" : "Cpu");
+        
+        //determine the dimensions/location of the board and stat window
+        switch (getMode())
+        {
+            case SinglePlayerCpu:
+            case SinglePlayerHuman:
+                
+                setBlockDimension(Block.DIMENSION_LARGE);
+                
+                //create a new board
+                this.board = new Board(getBlockDimension());
+                
+                //position board
+                getBoard().setX(START_X);
+                getBoard().setY(START_Y);
+
+                //position stats
+                getStats().setX(getBoard().getX() + getBoard().getWidth() + START_X);
+                getStats().setY(getBoard());
+                break;
+                
+            case TwoPlayerVsCpu:
+                
+                //determine size by human or not
+                setBlockDimension((human) ? Block.DIMENSION_REGULAR : Block.DIMENSION_SMALL);
+                
+                //create a new board
+                this.board = new Board(getBlockDimension());
+                
+                //the human and cpu will be placed accordingly
+                if (isHuman())
+                {
+                    //position board
+                    getBoard().setX(START_X);
+                    getBoard().setY(1300 - START_Y - getBoard().getHeight());
+
+                    //position stats
+                    getStats().setX(getBoard().getX() + getBoard().getWidth() + START_X);
+                    getStats().setY(getBoard().getY() + getBoard().getHeight() - getStats().getHeight());
+                }
+                else
+                {
+                    //position board
+                    getBoard().setX((Block.DIMENSION_REGULAR * Board.COLS) + (START_X * 15));
+                    getBoard().setY(getStats().getHeight() + (START_Y * 2));
+
+                    //position stats
+                    getStats().setX(getBoard());
+                    getStats().setY(START_Y);
+                }
+                break;
+                
+            default:
+                throw new Exception("Mode not setup here " + getMode().toString());
+        }
+        
+        //setup animations now the board has been created
+        BoardHelper.assignAnimations(getBoard());
         
         //store the previous piece drop time
         resetTime();
-        
-        //create new paint object
-        this.paint = new Paint();
+    }
+    
+    @Override
+    public void reset()
+    {
+        getBoard().reset();
+        getStats().reset();
+        setAction(null);
+        resetTime();
+        this.current = null;
+        this.next = null;
     }
     
     /**
-     * Does the user have the assigned action
-     * @param action Action to check
-     * @return true = yes, otherwise false
+     * Get the game mode
+     * @return The assigned game mode
      */
-    private boolean hasAction(final Action action)
+    private Game.Mode getMode()
     {
-        //if the action does not exist, return false
-        if (this.action == null)
-            return false;
-        
-        //check if the action is set
-        return (this.action == action);
+        return this.mode;
     }
     
     /**
-     * Assign the action
-     * @param action The desired player action
+     * Get our stats object
+     * @return Object with player stats
      */
-    public void setAction(final Action action)
+    public final Stats getStats()
     {
-        this.action = action;
+        return this.stats;
     }
     
     /**
@@ -103,20 +155,12 @@ public abstract class Player implements IPlayer, Disposable
         }
     }
     
-    /**
-     * Get the paint object used to render blocks, etc....
-     * @return 
-     */
-    private Paint getPaint()
-    {
-        return this.paint;
-    }
     
     /**
      * Get the player's board
      * @return The players board
      */
-    protected final Board getBoard()
+    public final Board getBoard()
     {
         return this.board;
     }
@@ -131,6 +175,10 @@ public abstract class Player implements IPlayer, Disposable
         {
             if (getNext() != null)
             {
+                //set default start
+                getNext().setCol(Board.START_COL);
+                getNext().setRow(Board.START_ROW);
+                
                 //assign to the current
                 this.current = getNext();
                 
@@ -140,15 +188,16 @@ public abstract class Player implements IPlayer, Disposable
             else
             {
                 //create a new piece
-                this.current = new Piece(GamePanel.RANDOM, Board.START_COL, Board.START_ROW);
+                this.current = new Piece(Board.START_COL, Board.START_ROW, getBlockDimension());
             }
             
             //reset timer
             resetTime();
         }
         
+        //render the next piece, if exists
         if (getNext() == null)
-            this.next = new Piece(GamePanel.RANDOM, Board.START_COL, Board.START_ROW);
+            this.next = new Piece(0, 0, getBlockDimension());
     }
     
     /**
@@ -186,32 +235,6 @@ public abstract class Player implements IPlayer, Disposable
     }
     
     /**
-     * Reset the timer, from the previous piece drop
-     */
-    private void resetTime()
-    {
-        setTime(System.nanoTime());
-    }
-    
-    /**
-     * Assign the previous drop time.
-     * @param time The time of the previous piece drop (nanoseconds)
-     */
-    private void setTime(final long time)
-    {
-        this.time = time;
-    }
-    
-    /**
-     * The start time of the previous piece drop
-     * @return The time of the previous piece drop (nanoseconds)
-     */
-    private long getTime()
-    {
-        return this.time;
-    }
-    
-    /**
      * Update common game elements
      * @throws Exception 
      */
@@ -220,6 +243,20 @@ public abstract class Player implements IPlayer, Disposable
         //if there are no completed rows
         if (!getBoard().hasComplete())
         {
+            //if the game is over, don't continue
+            if (getBoard().hasGameover())
+                return;
+            
+            //if we are out of health, the game is over
+            if (getStats().getHealth() <= Stats.HEALTH_MIN)
+            {
+                //flag the game over
+                getBoard().setGameover(true);
+                
+                //no need to continue
+                return;
+            }
+            
             //make sure we have pieces
             if (getCurrent() == null || getNext() == null)
             {
@@ -229,7 +266,7 @@ public abstract class Player implements IPlayer, Disposable
             else
             {
                 //check to see if it is time to drop a piece
-                if (hasAction(Action.MOVE_DOWN) || System.nanoTime() - getTime() >= Board.COMPLETED_LINE_DELAY)
+                if (hasAction(Action.MOVE_DOWN) || System.nanoTime() - getTime() >= getDropDelay())
                 {
                     //move the row down 1
                     getCurrent().increaseRow();
@@ -245,12 +282,59 @@ public abstract class Player implements IPlayer, Disposable
                         //move back up 1 row
                         getCurrent().decreaseRow();
                         
+                        //if the piece is still in collision with the board, we have gameover
+                        if (getBoard().hasBlock(getCurrent()))
+                        {
+                            //flag game over
+                            getBoard().setGameover(true);
+                            
+                            //no need to continue
+                            return;
+                        }
+                        
                         //add piece to board
                         getBoard().add(getCurrent());
                         
+                        //get the completed row count
+                        final int rowCount = BoardHelper.getCompletedRowCount(getBoard());
+                        
                         //if there is at least 1 completed row, flag complete
-                        if (BoardHelper.getCompletedRowCount(getBoard()) > 0)
+                        if (rowCount > 0)
+                        {
+                            //mark blocks completed
+                            BoardHelper.markCompletedRows(getBoard());
+                            
+                            //set the board as complete
                             getBoard().setComplete(true);
+                            
+                            switch (rowCount)
+                            {
+                                case 1:
+                                    //play sound effect
+                                    Assets.play(Assets.AudioKey.CompletedLine1);
+                                    break;
+                                    
+                                case 2:
+                                    //play sound effect
+                                    Assets.play(Assets.AudioKey.CompletedLine2);
+                                    break;
+                                    
+                                case 3:
+                                    //play sound effect
+                                    Assets.play(Assets.AudioKey.CompletedLine3);
+                                    break;
+                                    
+                                case 4:
+                                    //play sound effect
+                                    Assets.play(Assets.AudioKey.CompletedLine4);
+                                    break;
+                            }
+                        }
+                        else
+                        {
+                            //no completed line, play place piece sound effect
+                            Assets.play(Assets.AudioKey.PiecePlace);
+                        }
                         
                         //remove the current piece
                         removeCurrent();
@@ -299,15 +383,8 @@ public abstract class Player implements IPlayer, Disposable
             //check to see if the completed line timer is finished
             if (System.nanoTime() - getBoard().getTime() >= Board.COMPLETED_LINE_DELAY)
             {
-                //get the completed lines count
-                final int count = BoardHelper.getCompletedRowCount(getBoard());
-                
-                //if debug, print result
-                if (MainThread.DEBUG)
-                {
-                    //print result
-                    System.out.println("Completed lines: " + count);
-                }
+                //update the completed lines count
+                getStats().setLines(getStats().getLines() + BoardHelper.getCompletedRowCount(getBoard()));
                 
                 //clear the rows
                 BoardHelper.clearRows(getBoard());
@@ -342,10 +419,12 @@ public abstract class Player implements IPlayer, Disposable
             next = null;
         }
         
-        if (paint != null)
-            paint = null;
+        if (stats != null)
+        {
+            stats.dispose();
+            stats = null;
+        }
     }
-    
     
     /**
      * Render the player, including the board etc....
@@ -373,23 +452,47 @@ public abstract class Player implements IPlayer, Disposable
                         continue;
                     
                     //calculate coordinate
-                    final int x = (int)(getBoard().getX() + (block.getCol() * Block.DIMENSION));
-                    final int y = (int)(getBoard().getY() + (block.getRow() * Block.DIMENSION));
+                    final int x = (int)(getBoard().getX() + (block.getCol() * block.getWidth()));
+                    final int y = (int)(getBoard().getY() + (block.getRow() * block.getHeight()));
                     
                     //render block
                     block.render(canvas, getBoard().getSpritesheet().get(block.getType()).getImage(), x, y);
                 }
             }
             
-            //make sure the current piece exists
+            //render the current piece, if exists
             if (getCurrent() != null)
+                getCurrent().render(canvas, getBoard());
+            
+            //render the player stats
+            if (getStats() != null)
+                getStats().render(canvas);
+            
+            /**
+             * If the next piece exists, render inside the stat window
+             */
+            if (getNext() != null)
             {
-                //calculate starting coordinate
-                final int startX = (int)(getBoard().getX() + (getCurrent().getCol() * Block.DIMENSION));
-                final int startY = (int)(getBoard().getY() + (getCurrent().getRow() * Block.DIMENSION));
+                //reference to scale the piece
+                float scale;
                 
-                //render piece
-                getCurrent().render(canvas, getBoard().getSpritesheet().get(getCurrent().getBlocks().get(0).getType()).getImage(), startX, startY);
+                //determine how to scale according to game mode and human status
+                switch (getMode())
+                {
+                    case SinglePlayerHuman:
+                    case SinglePlayerCpu:
+                        scale = 0.5f;
+                        break;
+                        
+                    case TwoPlayerVsCpu:
+                        scale = (isHuman()) ? 0.5f : 1.0f;
+                        break;
+                        
+                    default:
+                        throw new Exception("Mode is not setup here: " + getMode().toString());
+                }
+                
+                getNext().render(canvas, getBoard(), scale, getStats().getOffsetX(), getStats().getOffsetY());
             }
         }
     }

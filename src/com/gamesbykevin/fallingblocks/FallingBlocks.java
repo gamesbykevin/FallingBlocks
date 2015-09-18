@@ -16,10 +16,14 @@ public class FallingBlocks extends Activity
     private GamePanel panel;
     
     /**
-     * The website address we want to navigate to
+     * Our website address where more games can be found
      */
-    public static final String WEBPAGE_URL = "http://gamesbykevin.com";
+    public static final String WEBPAGE_MORE_GAMES_URL = "http://gamesbykevin.com";
 
+    /**
+     * The web address where this game can be rated
+     */
+    public static final String WEBPAGE_RATE_URL = "https://play.google.com/store/apps/developer?id=Games+By+Kevin";
     
     /** Called when the activity is first created. */
     @Override
@@ -72,14 +76,15 @@ public class FallingBlocks extends Activity
     @Override
     public void onDestroy()
     {
-        //finish the current activity
-        super.finish();
-        
+        //cleanup game panel
         if (getGamePanel() != null)
         {
             getGamePanel().dispose();
             setGamePanel(null);
         }
+        
+        //finish the current activity
+        super.finish();
         
         //perform final cleanup
         super.onDestroy();

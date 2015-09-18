@@ -1,9 +1,8 @@
 package com.gamesbykevin.fallingblocks.assets;
 
-import android.graphics.Bitmap;
-import android.media.MediaPlayer;
+import android.app.Activity;
 
-import java.util.HashMap;
+import com.gamesbykevin.androidframework.resources.*;
 
 /**
  * This class will contain our game assets
@@ -11,102 +10,152 @@ import java.util.HashMap;
  */
 public class Assets
 {
-    //hashmap of images
-    private static HashMap<ImageKey, Bitmap> Images = new HashMap<ImageKey, Bitmap>();
-    
-    //hashmap of audio
-    private static HashMap<AudioKey, MediaPlayer> Audio = new HashMap<AudioKey, MediaPlayer>();
+    /**
+     * The directory where audio sound effect resources are kept
+     */
+    private static final String DIRECTORY_AUDIO = "audio";
     
     /**
-     * The different images in our game
+     * The directory where image resources are kept
+     */
+    private static final String DIRECTORY_IMAGE = "image";
+    
+    /**
+     * The directory where font resources are kept
+     */
+    private static final String DIRECTORY_FONT = "font";
+    
+    /**
+     * The different fonts used in our game.<br>
+     * Order these according to the file name in the "font" assets folder.
+     */
+    public enum FontKey
+    {
+        Default
+    }
+    
+    /**
+     * The different images in our game.<br>
+     * Order these according to the file name in the "image" assets folder.
      */
     public enum ImageKey
     {
+        SettingsBack,
         Background, 
-        Control_Left,
-        Control_Right,
-        Control_Up,
+        SettingsDifficulty0, 
+        SettingsDifficulty1, 
+        SettingsDifficulty2, 
         Control_Down,
-        Control_Pause,
+        Control_Exit,
+        ExitCancel,
+        ExitConfirm,
+        MenuExit,
+        GameoverExit,
+        Blocks,
+        MenuInstructions,
+        Control_Left,
+        Logo,
+        GameoverMainmenu, 
+        SettingsMode0, 
+        SettingsMode1, 
+        SettingsMode2, 
+        MenuMore,
         Control_Mute,
+        Control_Pause,
+        MenuRate,
+        GameoverRestart,
+        Control_Right,
+        MenuSettings,
+        MenuStart,
         Control_UnMute,
-        Blocks
+        Control_Up,
     }
     
     /**
-     * The key of each sound effect in our game
+     * The key of each sound in our game.<br>
+     * Order these according to the file name in the "audio" assets folder.
      */
     public enum AudioKey
     {
+        CompletedLine1,
+        CompletedLine2,
+        CompletedLine3,
+        CompletedLine4,
+        GameoverLose, 
+        GameoverWin,
+        Music0,
+        Music1,
+        PiecePlace,
+        PieceRotate,
+        SettingChange
+    }
+    
+    /**
+     * Load all assets
+     * @param activity Object containing AssetManager needed to load assets
+     * @throws Exception 
+     */
+    public static final void load(final Activity activity) throws Exception
+    {
+        //load all images
+        Images.load(activity, ImageKey.values(), DIRECTORY_IMAGE);
         
+        //load all fonts
+        Font.load(activity, FontKey.values(), DIRECTORY_FONT);
+        
+        //load all audio
+        Audio.load(activity, AudioKey.values(), DIRECTORY_AUDIO);
     }
     
-    public static final void assignImage(final ImageKey key, final Bitmap image)
+    /**
+     * Stop all audio
+     */
+    public static void stop()
     {
-        if (getImage(key) == null)
-            getImages().put(key, image);
+        for (AudioKey key : AudioKey.values())
+        {
+            stop(key);
+        }
     }
     
-    public static final void assignAudio(final AudioKey key, final MediaPlayer sound)
+    /**
+     * Stop playback of the specified audio
+     * @param key The unique key of the audio we want to stop
+     */
+    public static void stop(final Object key)
     {
-        if (getAudio().get(key) == null)
-            getAudio().put(key, sound);
+        Audio.stop(key);
     }
     
-    public static final Bitmap getImage(final ImageKey key)
+    /**
+     * 
+     * @param key 
+     */
+    public static void play(final AudioKey key)
     {
-        return getImages().get(key);
+        play(key, false);
     }
     
-    public static final void playAudio(final AudioKey key)
+    /**
+     * 
+     * @param key
+     * @param loop 
+     */
+    public static void play(final AudioKey key, final boolean loop)
     {
-        if (Audio.get(key) != null)
-            Audio.get(key).start();
+        if (!Audio.isAudioEnabled())
+            return;
+        
+        Audio.play(key, loop);
     }
     
-    private static HashMap<AudioKey, MediaPlayer> getAudio()
-    {
-        if (Audio == null)
-            Audio = new HashMap<AudioKey, MediaPlayer>();
-        return Audio;
-    }
-    
-    private static HashMap<ImageKey, Bitmap> getImages()
-    {
-        if (Images == null)
-            Images = new HashMap<ImageKey, Bitmap>();
-        return Images;
-    }
-    
+    /**
+     * Recycle assets
+     */
     public static void recycle()
     {
-        if (Images != null)
-        {
-            for (Bitmap image : Images.values())
-            {
-                if (image != null)
-                {
-                    image = null;
-                }
-            }
-            
-            Images.clear();
-            Images = null;
-        }
-        
-        if (Audio != null)
-        {
-            for (MediaPlayer audio : Audio.values())
-            {
-                if (audio != null)
-                {
-                    audio.release();
-                    audio = null;
-                }
-            }
-            
-            Audio.clear();
-            Audio = null;
-        }
+        Images.dispose();
+        Font.dispose();
+        Audio.dispose();
     }
 }
