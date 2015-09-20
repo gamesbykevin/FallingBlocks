@@ -141,8 +141,9 @@ public abstract class Player extends PlayerHelper implements IPlayer, Disposable
     
     /**
      * Rotate the current piece
+     * @return true if the rotation was successful, false if the rotation caused block collision or out of bounds
      */
-    public void rotate()
+    public boolean rotate()
     {
         //make sure the current piece exists
         if (getCurrent() != null)
@@ -152,8 +153,20 @@ public abstract class Player extends PlayerHelper implements IPlayer, Disposable
             
             //if not in bounds, rotate backwards
             if (!getCurrent().hasBounds() || getBoard().hasBlock(getCurrent()))
+            {
+                //rotate back
                 getCurrent().rotateCounterClockwise();
+                
+                //not successful
+                return false;
+            }
+            
+            //rotation was successfult
+            return true;
         }
+        
+        //no rotation occurred
+        return false;
     }
     
     
@@ -296,11 +309,8 @@ public abstract class Player extends PlayerHelper implements IPlayer, Disposable
                         //add piece to board
                         getBoard().add(getCurrent());
                         
-                        //get the completed row count
-                        final int rowCount = BoardHelper.getCompletedRowCount(getBoard());
-                        
                         //if there is at least 1 completed row, flag complete
-                        if (rowCount > 0)
+                        if (BoardHelper.getCompletedRowCount(getBoard()) > 0)
                         {
                             //mark blocks completed
                             BoardHelper.markCompletedRows(getBoard());
@@ -308,28 +318,8 @@ public abstract class Player extends PlayerHelper implements IPlayer, Disposable
                             //set the board as complete
                             getBoard().setComplete(true);
                             
-                            switch (rowCount)
-                            {
-                                case 1:
-                                    //play sound effect
-                                    Audio.play(Assets.AudioKey.CompletedLine1);
-                                    break;
-                                    
-                                case 2:
-                                    //play sound effect
-                                    Audio.play(Assets.AudioKey.CompletedLine2);
-                                    break;
-                                    
-                                case 3:
-                                    //play sound effect
-                                    Audio.play(Assets.AudioKey.CompletedLine3);
-                                    break;
-                                    
-                                case 4:
-                                    //play sound effect
-                                    Audio.play(Assets.AudioKey.CompletedLine4);
-                                    break;
-                            }
+                            //play sound effect
+                            Audio.play(Assets.AudioKey.CompletedLine);
                         }
                         else
                         {
@@ -373,8 +363,16 @@ public abstract class Player extends PlayerHelper implements IPlayer, Disposable
                         //remove action
                         setAction(null);
                         
-                        //rotate piece
-                        rotate();
+                        //rotate and if successful
+                        if (rotate())
+                        {
+                            //only play sound effect if human
+                            if (isHuman())
+                            {
+                                //play sound effect
+                                Audio.play(Assets.AudioKey.PieceRotate);
+                            }
+                        }
                     }
                 }
             }

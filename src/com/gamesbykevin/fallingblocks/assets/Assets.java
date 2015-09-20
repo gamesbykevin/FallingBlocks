@@ -79,14 +79,11 @@ public class Assets
      */
     public enum AudioKey
     {
-        CompletedLine1,
-        CompletedLine2,
-        CompletedLine3,
-        CompletedLine4,
+        CompletedLine,
         GameoverLose, 
         GameoverWin,
-        Music0,
-        Music1,
+        MusicVs,
+        MusicSingle,
         PiecePlace,
         PieceRotate,
         SettingChange

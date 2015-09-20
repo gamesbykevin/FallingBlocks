@@ -3,6 +3,7 @@ package com.gamesbykevin.fallingblocks.game.controller;
 import com.gamesbykevin.androidframework.awt.Button;
 
 import android.graphics.Canvas;
+import android.graphics.Color;
 import android.view.MotionEvent;
 
 import com.gamesbykevin.androidframework.resources.Audio;
@@ -10,9 +11,9 @@ import com.gamesbykevin.androidframework.resources.Images;
 
 import com.gamesbykevin.fallingblocks.assets.Assets;
 import com.gamesbykevin.fallingblocks.game.Game;
-import com.gamesbykevin.fallingblocks.panel.GamePanel;
 import com.gamesbykevin.fallingblocks.player.Player;
 import com.gamesbykevin.fallingblocks.screen.MainScreen;
+import com.gamesbykevin.fallingblocks.thread.MainThread;
 
 import java.util.HashMap;
 
@@ -64,32 +65,31 @@ public class Controller implements IController
         this.buttons.get(Assets.ImageKey.Control_Down).setX(x + 95);
         this.buttons.get(Assets.ImageKey.Control_Down).setY(y + 155);
         
-        this.buttons.get(Assets.ImageKey.Control_Mute).setX(x + 375);
+        this.buttons.get(Assets.ImageKey.Control_Mute).setX(x + 450);
         this.buttons.get(Assets.ImageKey.Control_Mute).setY(y + 97);
-        this.buttons.get(Assets.ImageKey.Control_UnMute).setX(x + 375);
+        this.buttons.get(Assets.ImageKey.Control_UnMute).setX(x + 450);
         this.buttons.get(Assets.ImageKey.Control_UnMute).setY(y + 97);
-        this.buttons.get(Assets.ImageKey.Control_Pause).setX(x + 500);
+        this.buttons.get(Assets.ImageKey.Control_Pause).setX(x + 575);
         this.buttons.get(Assets.ImageKey.Control_Pause).setY(y + 97);
-        this.buttons.get(Assets.ImageKey.Control_Exit).setX(x + 625);
+        this.buttons.get(Assets.ImageKey.Control_Exit).setX(x + 700);
         this.buttons.get(Assets.ImageKey.Control_Exit).setY(y + 97);
         
         //assign collision boundary
-        setBounds(buttons.get(Assets.ImageKey.Control_Down), 0, 50, 100, 75);
-        setBounds(buttons.get(Assets.ImageKey.Control_Up), 0, 0, 100, 75);
-        setBounds(buttons.get(Assets.ImageKey.Control_Left), 0, 0, 75, 100);
-        setBounds(buttons.get(Assets.ImageKey.Control_Right), 50, 0, 75, 100);
+        final int w1 = 120;
+        final int h1 = 105;
+        
+        setBounds(buttons.get(Assets.ImageKey.Control_Down), -10, 30, w1, h1);
+        setBounds(buttons.get(Assets.ImageKey.Control_Up), -10, -20, w1, h1);
+        
+        final int w2 = 105;
+        final int h2 = 120;
+        setBounds(buttons.get(Assets.ImageKey.Control_Left), -20, -10, w2, h2);
+        setBounds(buttons.get(Assets.ImageKey.Control_Right), 30, -10, w2, h2);
         
         this.buttons.get(Assets.ImageKey.Control_Mute).updateBounds();
         this.buttons.get(Assets.ImageKey.Control_UnMute).updateBounds();
         this.buttons.get(Assets.ImageKey.Control_Pause).updateBounds();
         this.buttons.get(Assets.ImageKey.Control_Exit).updateBounds();
-        
-        if (Audio.isAudioEnabled())
-        {
-            this.buttons.get(Assets.ImageKey.Control_Mute).setVisible(false);
-            this.buttons.get(Assets.ImageKey.Control_UnMute).setVisible(true);
-        }
-        
     }
     
     /**
@@ -252,6 +252,17 @@ public class Controller implements IController
             buttons.get(Audio.isAudioEnabled() ? Assets.ImageKey.Control_UnMute : Assets.ImageKey.Control_Mute).render(canvas);
             buttons.get(Assets.ImageKey.Control_Pause).render(canvas);
             buttons.get(Assets.ImageKey.Control_Exit).render(canvas);
+        }
+        
+        if (MainThread.DEBUG)
+        {
+            android.graphics.Paint paint = new android.graphics.Paint();
+            paint.setColor(Color.GREEN);
+
+            canvas.drawRect(buttons.get(Assets.ImageKey.Control_Left).getBounds(), paint);
+            canvas.drawRect(buttons.get(Assets.ImageKey.Control_Right).getBounds(), paint);
+            canvas.drawRect(buttons.get(Assets.ImageKey.Control_Down).getBounds(), paint);
+            canvas.drawRect(buttons.get(Assets.ImageKey.Control_Up).getBounds(), paint);
         }
     }
 }

@@ -8,7 +8,6 @@ import com.gamesbykevin.androidframework.resources.Audio;
 import com.gamesbykevin.fallingblocks.assets.Assets;
 import com.gamesbykevin.fallingblocks.board.Board;
 import com.gamesbykevin.fallingblocks.game.controller.Controller;
-import com.gamesbykevin.fallingblocks.panel.GamePanel;
 
 import com.gamesbykevin.fallingblocks.player.*;
 import com.gamesbykevin.fallingblocks.screen.MainScreen;
@@ -41,9 +40,6 @@ public class Game implements IGame
         TwoPlayerVsCpu
     }
 
-    //store the music reference
-    private Assets.AudioKey musicKey;
-    
     /**
      * The amount of health damage to apply to opponent
      */
@@ -157,17 +153,9 @@ public class Game implements IGame
             //make sure no existing audio
             Audio.stop();
             
-            //pick random music to play
-            this.musicKey = GamePanel.RANDOM.nextBoolean() ? Assets.AudioKey.Music0 : Assets.AudioKey.Music1;
-            
-            //play random song
-            Audio.play(getMusicKey(), true);
+            //play song
+            resumeMusic();
         }
-    }
-    
-    private Assets.AudioKey getMusicKey()
-    {
-        return this.musicKey;
     }
     
     /**
@@ -175,8 +163,8 @@ public class Game implements IGame
      */
     public void resumeMusic()
     {
-        if (getMusicKey() != null)
-            Audio.play(getMusicKey(), true);
+        //play song
+        Audio.play(getPlayers().size() > 1 ? Assets.AudioKey.MusicVs : Assets.AudioKey.MusicSingle, true);
     }
     
     /**
