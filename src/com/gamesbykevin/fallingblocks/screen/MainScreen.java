@@ -5,6 +5,7 @@ import android.graphics.Color;
 import android.view.MotionEvent;
 import com.gamesbykevin.androidframework.anim.Animation;
 import com.gamesbykevin.androidframework.base.Entity;
+import com.gamesbykevin.androidframework.resources.Audio;
 
 import com.gamesbykevin.androidframework.resources.Disposable;
 import com.gamesbykevin.androidframework.resources.Images;
@@ -209,6 +210,18 @@ public final class MainScreen implements Screen, Disposable
         //if pausing store the previous state
         if (state == State.Paused)
             pauseScreen.setStatePrevious(getState());
+        
+        //if not the running state, stop all existing sound
+        if (state != State.Running)
+        {
+            Audio.stop();
+        }
+        else
+        {
+            if (getGame() != null)
+                getGame().resumeMusic();
+        }
+        
         
         //assign the state
         this.state = state;

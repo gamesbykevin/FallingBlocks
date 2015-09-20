@@ -10,6 +10,7 @@ import com.gamesbykevin.androidframework.resources.Images;
 
 import com.gamesbykevin.fallingblocks.assets.Assets;
 import com.gamesbykevin.fallingblocks.game.Game;
+import com.gamesbykevin.fallingblocks.panel.GamePanel;
 import com.gamesbykevin.fallingblocks.player.Player;
 import com.gamesbykevin.fallingblocks.screen.MainScreen;
 
@@ -149,21 +150,19 @@ public class Controller implements IController
                 //make sure the correct button is showing
                 if (Audio.isAudioEnabled())
                 {
-                    this.buttons.get(Assets.ImageKey.Control_Mute).setVisible(false);
-                    this.buttons.get(Assets.ImageKey.Control_UnMute).setVisible(true);
-                    
                     //play sound indicating sound is enabled
                     Audio.play(Assets.AudioKey.SettingChange);
                     
                     //resume music
+                    getGame().resumeMusic();
                 }
                 else
                 {
-                    this.buttons.get(Assets.ImageKey.Control_Mute).setVisible(true);
-                    this.buttons.get(Assets.ImageKey.Control_UnMute).setVisible(false);
+                    //if audio is not enabled, stop all sound
+                    Audio.stop();
                 }
 
-                //no need to return
+                //no need to continue
                 return;
             }
         }
@@ -250,8 +249,7 @@ public class Controller implements IController
             buttons.get(Assets.ImageKey.Control_Right).render(canvas);
             buttons.get(Assets.ImageKey.Control_Down).render(canvas);
             buttons.get(Assets.ImageKey.Control_Up).render(canvas);
-            buttons.get(Assets.ImageKey.Control_UnMute).render(canvas);
-            buttons.get(Assets.ImageKey.Control_Mute).render(canvas);
+            buttons.get(Audio.isAudioEnabled() ? Assets.ImageKey.Control_UnMute : Assets.ImageKey.Control_Mute).render(canvas);
             buttons.get(Assets.ImageKey.Control_Pause).render(canvas);
             buttons.get(Assets.ImageKey.Control_Exit).render(canvas);
         }

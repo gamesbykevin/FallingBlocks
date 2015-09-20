@@ -29,6 +29,9 @@ public class OptionsScreen implements Screen, Disposable
     //list of mode buttons
     private List<Button> modes;
     
+    //list of buttons for the sound
+    private List<Button> sounds;
+    
     //store the index
     private int indexDifficulty = 0;
     private int indexMode = 0;
@@ -51,12 +54,25 @@ public class OptionsScreen implements Screen, Disposable
         final int x = 230;
         int y = 350;
         
+        //add audio option
+        this.sounds = new ArrayList<Button>();
+        this.sounds.add(new Button(Images.getImage(Assets.ImageKey.SettingsSoundOff)));
+        this.sounds.add(new Button(Images.getImage(Assets.ImageKey.SettingsSoundOn)));
+        
+        for (Button button : sounds)
+        {
+            button.setX(x);
+            button.setY(y);
+            button.updateBounds();
+        }
+        
         //add buttons
         this.difficulties = new ArrayList<Button>();
         this.difficulties.add(new Button(Images.getImage(Assets.ImageKey.SettingsDifficulty0)));
         this.difficulties.add(new Button(Images.getImage(Assets.ImageKey.SettingsDifficulty1)));
         this.difficulties.add(new Button(Images.getImage(Assets.ImageKey.SettingsDifficulty2)));
         
+        y += 200;
         for (Button button : difficulties)
         {
             button.setX(x);
@@ -101,6 +117,21 @@ public class OptionsScreen implements Screen, Disposable
                 
                 //no need to continue
                 return true;
+            }
+            
+            for (Button button : sounds)
+            {
+                if (button.contains(x, y))
+                {
+                    //flip setting
+                    Audio.setAudioEnabled(!Audio.isAudioEnabled());
+                    
+                    //play sound effect
+                    Audio.play(Assets.AudioKey.SettingChange);
+                    
+                    //exit loop
+                    break;
+                }
             }
             
             for (Button button : modes)
@@ -178,11 +209,18 @@ public class OptionsScreen implements Screen, Disposable
         difficulties.get(this.indexDifficulty).render(canvas);
         modes.get(this.indexMode).render(canvas);
         back.render(canvas);
+        sounds.get(Audio.isAudioEnabled() ? 1 : 0).render(canvas);
     }
     
     @Override
     public void dispose()
     {
+        if (back != null)
+        {
+            back.dispose();
+            back = null;
+        }
+        
         if (difficulties != null)
         {
             for (Button button : difficulties)
@@ -212,5 +250,20 @@ public class OptionsScreen implements Screen, Disposable
             modes.clear();
             modes = null;
         }
-    }    
+        
+        if (sounds != null)
+        {
+            for (Button button : sounds)
+            {
+                if (button != null)
+                {
+                    button.dispose();
+                    button = null;
+                }
+            }
+            
+            sounds.clear();
+            sounds = null;
+        }
+    }
 }

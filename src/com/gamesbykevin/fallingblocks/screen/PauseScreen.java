@@ -87,6 +87,10 @@ public class PauseScreen implements Screen, Disposable
             //return to the previous state
             screen.setState(previous);
             
+            //if we are going back to the game, resume audio
+            if (previous == MainScreen.State.Running)
+                screen.getGame().resumeMusic();
+            
             //return true
             return true;
         }

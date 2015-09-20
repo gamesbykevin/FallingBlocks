@@ -5,6 +5,7 @@ import android.graphics.Canvas;
 import android.view.MotionEvent;
 
 import com.gamesbykevin.androidframework.awt.Button;
+import com.gamesbykevin.androidframework.resources.Audio;
 import com.gamesbykevin.androidframework.resources.Disposable;
 import com.gamesbykevin.androidframework.resources.Images;
 import com.gamesbykevin.androidframework.screen.Screen;
@@ -84,7 +85,7 @@ public class MenuScreen implements Screen, Disposable
             if (start.contains(x, y))
             {
                 //play sound effect
-                Assets.play(Assets.AudioKey.SettingChange);
+                Audio.play(Assets.AudioKey.SettingChange);
                 
                 //set running state
                 screen.setState(MainScreen.State.Running);
@@ -95,21 +96,22 @@ public class MenuScreen implements Screen, Disposable
             else if (settings.contains(x, y))
             {
                 //play sound effect
-                Assets.play(Assets.AudioKey.SettingChange);
+                Audio.play(Assets.AudioKey.SettingChange);
                 
+                //set the state
                 screen.setState(MainScreen.State.Options);
             }
             else if (instructions.contains(x, y))
             {
                 //play sound effect
-                Assets.play(Assets.AudioKey.SettingChange);
+                Audio.play(Assets.AudioKey.SettingChange);
                 
                 //go to instructions
             }
             else if (rate.contains(x, y))
             {
                 //play sound effect
-                Assets.play(Assets.AudioKey.SettingChange);
+                Audio.play(Assets.AudioKey.SettingChange);
                 
                 //go to web page
                 this.screen.getPanel().getActivity().openWebpage(FallingBlocks.WEBPAGE_RATE_URL);
@@ -117,7 +119,7 @@ public class MenuScreen implements Screen, Disposable
             else if (more.contains(x, y))
             {
                 //play sound effect
-                Assets.play(Assets.AudioKey.SettingChange);
+                Audio.play(Assets.AudioKey.SettingChange);
                 
                 //go to web page
                 this.screen.getPanel().getActivity().openWebpage(FallingBlocks.WEBPAGE_MORE_GAMES_URL);
@@ -125,7 +127,7 @@ public class MenuScreen implements Screen, Disposable
             else if (exit.contains(x, y))
             {
                 //play sound effect
-                Assets.play(Assets.AudioKey.SettingChange);
+                Audio.play(Assets.AudioKey.SettingChange);
                 
                 //exit game
                 this.screen.getPanel().getActivity().finish();

@@ -3,6 +3,7 @@ package com.gamesbykevin.fallingblocks.player;
 import android.graphics.Canvas;
 
 import com.gamesbykevin.androidframework.resources.Disposable;
+import com.gamesbykevin.androidframework.resources.Audio;
 import com.gamesbykevin.fallingblocks.assets.Assets;
 
 import com.gamesbykevin.fallingblocks.board.Board;
@@ -311,29 +312,29 @@ public abstract class Player extends PlayerHelper implements IPlayer, Disposable
                             {
                                 case 1:
                                     //play sound effect
-                                    Assets.play(Assets.AudioKey.CompletedLine1);
+                                    Audio.play(Assets.AudioKey.CompletedLine1);
                                     break;
                                     
                                 case 2:
                                     //play sound effect
-                                    Assets.play(Assets.AudioKey.CompletedLine2);
+                                    Audio.play(Assets.AudioKey.CompletedLine2);
                                     break;
                                     
                                 case 3:
                                     //play sound effect
-                                    Assets.play(Assets.AudioKey.CompletedLine3);
+                                    Audio.play(Assets.AudioKey.CompletedLine3);
                                     break;
                                     
                                 case 4:
                                     //play sound effect
-                                    Assets.play(Assets.AudioKey.CompletedLine4);
+                                    Audio.play(Assets.AudioKey.CompletedLine4);
                                     break;
                             }
                         }
                         else
                         {
                             //no completed line, play place piece sound effect
-                            Assets.play(Assets.AudioKey.PiecePlace);
+                            Audio.play(Assets.AudioKey.PiecePlace);
                         }
                         
                         //remove the current piece

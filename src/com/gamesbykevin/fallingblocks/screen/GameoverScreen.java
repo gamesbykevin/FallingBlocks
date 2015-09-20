@@ -6,6 +6,7 @@ import android.graphics.Paint;
 import android.graphics.Rect;
 import android.view.MotionEvent;
 import com.gamesbykevin.androidframework.awt.Button;
+import com.gamesbykevin.androidframework.resources.Audio;
 import com.gamesbykevin.androidframework.resources.Disposable;
 import com.gamesbykevin.androidframework.resources.Font;
 import com.gamesbykevin.androidframework.resources.Images;
@@ -31,6 +32,7 @@ public class GameoverScreen implements Screen, Disposable
     //the dimensions of the text message
     private int pixelW;
     
+    //buttons
     private Button restart, mainmenu, exitgame;
     
     public GameoverScreen(final MainScreen screen)
@@ -94,7 +96,7 @@ public class GameoverScreen implements Screen, Disposable
             if (restart.contains(x, y))
             {
                 //play sound effect
-                Assets.play(Assets.AudioKey.SettingChange);
+                Audio.play(Assets.AudioKey.SettingChange);
                 
                 //move back to the game
                 screen.setState(MainScreen.State.Running);
@@ -105,7 +107,7 @@ public class GameoverScreen implements Screen, Disposable
             else if (mainmenu.contains(x, y))
             {
                 //play sound effect
-                Assets.play(Assets.AudioKey.SettingChange);
+                Audio.play(Assets.AudioKey.SettingChange);
                 
                 //move to the main menu
                 screen.setState(MainScreen.State.Ready);
@@ -113,7 +115,7 @@ public class GameoverScreen implements Screen, Disposable
             else if (exitgame.contains(x, y))
             {
                 //play sound effect
-                Assets.play(Assets.AudioKey.SettingChange);
+                Audio.play(Assets.AudioKey.SettingChange);
                 
                 //exit game
                 screen.getPanel().getActivity().finish();

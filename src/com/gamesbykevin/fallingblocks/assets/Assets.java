@@ -66,6 +66,8 @@ public class Assets
         GameoverRestart,
         Control_Right,
         MenuSettings,
+        SettingsSoundOff,
+        SettingsSoundOn,
         MenuStart,
         Control_UnMute,
         Control_Up,
@@ -105,48 +107,6 @@ public class Assets
         
         //load all audio
         Audio.load(activity, AudioKey.values(), DIRECTORY_AUDIO);
-    }
-    
-    /**
-     * Stop all audio
-     */
-    public static void stop()
-    {
-        for (AudioKey key : AudioKey.values())
-        {
-            stop(key);
-        }
-    }
-    
-    /**
-     * Stop playback of the specified audio
-     * @param key The unique key of the audio we want to stop
-     */
-    public static void stop(final Object key)
-    {
-        Audio.stop(key);
-    }
-    
-    /**
-     * 
-     * @param key 
-     */
-    public static void play(final AudioKey key)
-    {
-        play(key, false);
-    }
-    
-    /**
-     * 
-     * @param key
-     * @param loop 
-     */
-    public static void play(final AudioKey key, final boolean loop)
-    {
-        if (!Audio.isAudioEnabled())
-            return;
-        
-        Audio.play(key, loop);
     }
     
     /**

@@ -4,6 +4,7 @@ import android.graphics.Canvas;
 import android.view.MotionEvent;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
+import com.gamesbykevin.androidframework.resources.Audio;
 
 import com.gamesbykevin.androidframework.resources.Disposable;
 
@@ -193,7 +194,13 @@ public class GamePanel extends SurfaceView implements SurfaceHolder.Callback, Di
     {
         //pause the game
         if (screen != null)
+        {
+            //stop all audio while paused
+            Audio.stop();
+            
+            //set the state
             screen.setState(MainScreen.State.Paused);
+        }
     }
     
     @Override

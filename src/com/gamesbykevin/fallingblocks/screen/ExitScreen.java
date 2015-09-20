@@ -7,6 +7,7 @@ import android.graphics.Rect;
 import android.view.MotionEvent;
 
 import com.gamesbykevin.androidframework.awt.Button;
+import com.gamesbykevin.androidframework.resources.Audio;
 import com.gamesbykevin.androidframework.resources.Disposable;
 import com.gamesbykevin.androidframework.resources.Font;
 import com.gamesbykevin.androidframework.resources.Images;
@@ -82,7 +83,7 @@ public class ExitScreen implements Screen, Disposable
                 screen.setState(MainScreen.State.Running);
                 
                 //play sound effect
-                Assets.play(Assets.AudioKey.SettingChange);
+                Audio.play(Assets.AudioKey.SettingChange);
             }
             else if (this.exitConfirm.contains(x, y))
             {
@@ -90,7 +91,7 @@ public class ExitScreen implements Screen, Disposable
                 screen.setState(MainScreen.State.Ready);
                 
                 //play sound effect
-                Assets.play(Assets.AudioKey.SettingChange);
+                Audio.play(Assets.AudioKey.SettingChange);
             }
             
             return true;

@@ -3,9 +3,7 @@ package com.gamesbykevin.fallingblocks.game;
 import android.view.MotionEvent;
 import android.graphics.Canvas;
 
-import com.gamesbykevin.androidframework.anim.Animation;
-import com.gamesbykevin.androidframework.base.Entity;
-import com.gamesbykevin.androidframework.resources.Disposable;
+import com.gamesbykevin.androidframework.resources.Audio;
 
 import com.gamesbykevin.fallingblocks.assets.Assets;
 import com.gamesbykevin.fallingblocks.board.Board;
@@ -42,6 +40,9 @@ public class Game implements IGame
         SinglePlayerCpu,
         TwoPlayerVsCpu
     }
+
+    //store the music reference
+    private Assets.AudioKey musicKey;
     
     /**
      * The amount of health damage to apply to opponent
@@ -153,13 +154,29 @@ public class Game implements IGame
                     player.reset();
             }
             
-            //make sure no existing music is playing
-            Assets.stop(Assets.AudioKey.Music0);
-            Assets.stop(Assets.AudioKey.Music1);
+            //make sure no existing audio
+            Audio.stop();
+            
+            //pick random music to play
+            this.musicKey = GamePanel.RANDOM.nextBoolean() ? Assets.AudioKey.Music0 : Assets.AudioKey.Music1;
             
             //play random song
-            Assets.play(GamePanel.RANDOM.nextBoolean() ? Assets.AudioKey.Music0 : Assets.AudioKey.Music1, true);
+            Audio.play(getMusicKey(), true);
         }
+    }
+    
+    private Assets.AudioKey getMusicKey()
+    {
+        return this.musicKey;
+    }
+    
+    /**
+     * Resume playing music
+     */
+    public void resumeMusic()
+    {
+        if (getMusicKey() != null)
+            Audio.play(getMusicKey(), true);
     }
     
     /**
@@ -216,6 +233,9 @@ public class Game implements IGame
                 //if the player has game over
                 if (player.getBoard().hasGameover())
                 {
+                    //set the state to game over
+                    screen.setState(MainScreen.State.GameOver);
+                    
                     //default message
                     screen.getGameoverScreen().setMessage("Game Over");
                     
@@ -224,16 +244,27 @@ public class Game implements IGame
                     {
                         if (player.isHuman())
                         {
+                            //set message
                             screen.getGameoverScreen().setMessage("Game Over, You Lose");
+
+                            //play song
+                            Audio.play(Assets.AudioKey.GameoverLose);
                         }
                         else
                         {
+                            //set message
                             screen.getGameoverScreen().setMessage("Game Over, You Win");
+                            
+                            //play song
+                            Audio.play(Assets.AudioKey.GameoverWin);
                         }
                     }
+                    else
+                    {
+                        //play song
+                        Audio.play(Assets.AudioKey.GameoverLose);
+                    }
                     
-                    //set the state to game over
-                    screen.setState(MainScreen.State.GameOver);
                     break;
                 }
                 
