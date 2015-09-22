@@ -136,4 +136,5 @@ public class FallingBlocks extends Activity
     private void setGamePanel(final GamePanel panel)
     {
         this.panel = panel;
-    }}
+    }
+}
