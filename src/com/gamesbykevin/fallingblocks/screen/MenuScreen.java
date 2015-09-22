@@ -107,6 +107,7 @@ public class MenuScreen implements Screen, Disposable
                 Audio.play(Assets.AudioKey.SettingChange);
                 
                 //go to instructions
+                this.screen.getPanel().getActivity().openWebpage(FallingBlocks.WEBPAGE_GAME_INSTRUCTIONS_URL);
             }
             else if (rate.contains(x, y))
             {

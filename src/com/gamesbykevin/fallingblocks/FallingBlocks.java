@@ -23,7 +23,12 @@ public class FallingBlocks extends Activity
     /**
      * The web address where this game can be rated
      */
-    public static final String WEBPAGE_RATE_URL = "https://play.google.com/store/apps/developer?id=Games+By+Kevin";
+    public static final String WEBPAGE_RATE_URL = "https://play.google.com/store/apps/details?id=com.gamesbykevin.fallingblocks";
+
+    /**
+     * The url that contains the instructions for the game
+     */
+    public static final String WEBPAGE_GAME_INSTRUCTIONS_URL = "http://gamesbykevin.com/2015/09/20/falling-blocks/";
     
     /** Called when the activity is first created. */
     @Override
