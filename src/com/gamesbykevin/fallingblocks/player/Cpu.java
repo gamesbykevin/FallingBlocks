@@ -79,7 +79,7 @@ public final class Cpu extends Player
                      * The piece will drop here, don't need to do anything.<br>
                      * We can force the piece to drop if single player cpu to speed up the game
                      */
-                    if (super.isMultiPlayer())
+                    if (!super.isMultiPlayer())
                         setAction(Action.MOVE_DOWN);
                 }
             }
