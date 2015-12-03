@@ -4,20 +4,20 @@ import android.graphics.Canvas;
 import android.view.MotionEvent;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
+
 import com.gamesbykevin.androidframework.resources.Audio;
-
 import com.gamesbykevin.androidframework.resources.Disposable;
-
-import com.gamesbykevin.fallingblocks.screen.MainScreen;
-import com.gamesbykevin.fallingblocks.FallingBlocks;
 import com.gamesbykevin.fallingblocks.assets.Assets;
+import com.gamesbykevin.fallingblocks.screen.ScreenManager;
+import com.gamesbykevin.fallingblocks.screen.ScreenManager.State;
 import com.gamesbykevin.fallingblocks.thread.MainThread;
+import com.gamesbykevin.fallingblocks.MainActivity;
 
 import java.util.Random;
 
 /**
  * Game Panel class
- * @author ABRAHAM
+ * @author GOD
  */
 public class GamePanel extends SurfaceView implements SurfaceHolder.Callback, Disposable
 {
@@ -31,19 +31,28 @@ public class GamePanel extends SurfaceView implements SurfaceHolder.Callback, Di
     public static final int HEIGHT = 1600;
     
     //the reference to our activity
-    private final FallingBlocks activity;
+    private final MainActivity activity;
     
     //the object containing our game screens
-    private MainScreen screen;
+    private ScreenManager screen;
     
     //our main game thread
     private MainThread thread;
+    
+    //did motion event down happen
+    private boolean down = false;
+    
+    //get the ratio of the users screen compared to the default dimensions for the motion event
+    private float scaleMotionX, scaleMotionY;
+
+    //get the ratio of the users screen compared to the default dimensions for the render
+    private float scaleRenderX, scaleRenderY;
     
     /**
      * Create a new game panel
      * @param activity Our main activity reference
      */
-    public GamePanel(final FallingBlocks activity)
+    public GamePanel(final MainActivity activity)
     {
         //call to parent constructor
         super(activity);
@@ -53,16 +62,25 @@ public class GamePanel extends SurfaceView implements SurfaceHolder.Callback, Di
             
         //make game panel focusable = true so it can handle events
         super.setFocusable(true);
-        
-        try
-        {
-            //load game resources
-            Assets.load(getActivity());
-        }
-        catch (Exception e)
-        {
-            e.printStackTrace();
-        }
+    }
+    
+    /**
+     * Get the main game thread.<br>
+     * If the main thread does not exist, it will be created
+     * @return The main game thread
+     */
+    private MainThread getThread()
+    {
+    	return this.thread;
+    }
+    
+    /**
+     * Get the screen manager 
+     * @return The screen manager containing all our screens
+     */
+    private ScreenManager getScreen()
+    {
+    	return this.screen;
     }
     
     @Override
@@ -74,6 +92,7 @@ public class GamePanel extends SurfaceView implements SurfaceHolder.Callback, Di
         //count number of attempts to complete thread
         int count = 0;
         
+        //here we will attempt to stop the thread
         while (retry && count <= MainThread.COMPLETE_THREAD_ATTEMPTS)
         {
             try
@@ -81,13 +100,13 @@ public class GamePanel extends SurfaceView implements SurfaceHolder.Callback, Di
                 //increase count
                 count++;
                 
-                if (thread != null)
+                if (getThread() != null)
                 {
                     //set running false, to stop the infinite loop
-                    thread.setRunning(false);
+                	getThread().setRunning(false);
 
                     //wait for thread to finish
-                    thread.join();
+                	getThread().join();
                 }
                 
                 //if we made it here, we were successful
@@ -111,7 +130,7 @@ public class GamePanel extends SurfaceView implements SurfaceHolder.Callback, Di
             screen = null;
         }
         
-        //recycle asset objects
+        //recycle all asset objects
         Assets.recycle();
     }
     
@@ -119,47 +138,19 @@ public class GamePanel extends SurfaceView implements SurfaceHolder.Callback, Di
      * Get the activity
      * @return The activity reference
      */
-    public final FallingBlocks getActivity()
+    public final MainActivity getActivity()
     {
         return this.activity;
     }
     
-    /**
-     * Now that the surface has been created we can create our game objects
-     * @param holder 
-     */
     @Override
-    public void surfaceCreated(SurfaceHolder holder)
+    public boolean performClick() 
     {
-        try
-        {
-            //create new random object
-            RANDOM = new Random(System.nanoTime());
-            
-            //load game resources
-            Assets.load(getActivity());
-            
-            //make sure the screen is created first before the thread starts
-            if (this.screen == null)
-                this.screen = new MainScreen(this);
-
-            //if the thread does not exist, create it
-            if (this.thread == null)
-                this.thread = new MainThread(getHolder(), this);
-
-            //if the thread hasn't been started yet
-            if (!this.thread.isRunning())
-            {
-                //start the thread
-                this.thread.setRunning(true);
-                this.thread.start();
-            }
-            
-        }
-        catch (Exception e)
-        {
-            e.printStackTrace();
-        }
+        //call parent
+        super.performClick();
+        
+        //return true
+        return true;
     }
     
     @Override
@@ -167,18 +158,36 @@ public class GamePanel extends SurfaceView implements SurfaceHolder.Callback, Di
     {
         try
         {
-            if (this.screen != null)
+            if (getScreen() != null)
             {
-                //calculate the coordinate offset
-                final float scaleFactorX = (float)WIDTH / getWidth();
-                final float scaleFactorY = (float)HEIGHT / getHeight();
-
                 //adjust the coordinates
-                final float x = event.getRawX() * scaleFactorX;
-                final float y = event.getRawY() * scaleFactorY;
+                final float x = event.getRawX() * getScaleMotionX();
+                final float y = event.getRawY() * getScaleMotionY();
 
-                //update the events
-                return this.screen.update(event, x, y);
+                switch (event.getAction())
+                {
+	                case MotionEvent.ACTION_DOWN:
+	                	
+	                	//flag motion down occurred
+		            	down = true;
+		            	break;
+		            	
+	                case MotionEvent.ACTION_UP:
+	                	
+	                	//if we have previously action down
+	                	if (down)
+	                	{
+	                		//flag false
+	                		down = false;
+	                		
+	                    	//perform click
+	                    	performClick();
+	                	}
+	                	break;
+                }
+                
+                //update the screen/game etc.. with the specified motion events
+                return getScreen().update(event, x, y);
             }
         }
         catch (Exception e)
@@ -189,17 +198,70 @@ public class GamePanel extends SurfaceView implements SurfaceHolder.Callback, Di
         return super.onTouchEvent(event);
     }
     
+    /**
+     * Now that the surface has been created we can create our game objects
+     * @param holder Object used to track events
+     */
+    @Override
+    public void surfaceCreated(SurfaceHolder holder)
+    {
+        try
+        {
+            //load assets
+            Assets.load(getActivity());
+            
+            //create if null
+            if (RANDOM == null)
+                RANDOM = new Random(System.nanoTime());
+            
+            //create the thread if it doesn't exist
+            if (getThread() == null)
+        		this.thread = new MainThread(getHolder(), this);
+            
+            //if the thread hasn't been started yet
+            if (!getThread().isRunning())
+            {
+                //start the thread
+            	getThread().setRunning(true);
+            	getThread().start();
+            }
+            
+            //flag the thread as not paused
+            getThread().setPause(false);
+            
+            //store the ratio for the motion event
+            this.scaleMotionX = (float)GamePanel.WIDTH / getWidth();
+            this.scaleMotionY = (float)GamePanel.HEIGHT / getHeight();
+            
+            //store the ratio for the render
+            this.scaleRenderX = getWidth() / (float)GamePanel.WIDTH;
+            this.scaleRenderY = getHeight() / (float)GamePanel.HEIGHT;
+        }
+        catch (Exception e)
+        {
+            e.printStackTrace();
+        }
+    }
+    
     @Override
     public void surfaceDestroyed(SurfaceHolder holder)
     {
         //pause the game
-        if (screen != null)
+        if (getScreen() != null)
         {
             //stop all audio while paused
             Audio.stop();
             
+            //flag the thread as paused
+            getThread().setPause(false);
+            
             //set the state
-            screen.setState(MainScreen.State.Paused);
+            getScreen().setState(State.Paused);
+        }
+        else
+        {
+        	//if the screen does not exist, just exit the game
+        	getActivity().finish();
         }
     }
     
@@ -216,8 +278,19 @@ public class GamePanel extends SurfaceView implements SurfaceHolder.Callback, Di
     {
         try
         {
-            if (screen != null)
-                screen.update();
+            //make sure the screen is created first before the thread starts
+            if (getScreen() == null)
+            {
+                //load all assets
+                Assets.load(getActivity());
+
+                //create new screen manager
+                this.screen = new ScreenManager(this);
+            }
+            else
+            {
+            	getScreen().update();
+            }
         }
         catch (Exception e)
         {
@@ -225,8 +298,50 @@ public class GamePanel extends SurfaceView implements SurfaceHolder.Callback, Di
         }
     }
     
+    /**
+     * Get the x scale factor for the motion event
+     * @return The x ratio of the user's width compared to the default width
+     */
+    private float getScaleMotionX()
+    {
+    	return this.scaleMotionX;
+    }
+    
+    /**
+     * Get the y scale factor for the motion event
+     * @return The y ratio of the user's height compared to the default height
+     */
+    private float getScaleMotionY()
+    {
+    	return this.scaleMotionY;
+    }
+
+    /**
+     * Get the x scale factor for the render
+     * @return The x ratio of the user's width compared to the default width
+     */
+    private float getScaleRenderX()
+    {
+    	return this.scaleRenderX;
+    }
+    
+    /**
+     * Get the y scale factor for the render
+     * @return The y ratio of the user's height compared to the default height
+     */
+    private float getScaleRenderY()
+    {
+    	return this.scaleRenderY;
+    }
+    
     @Override
     public void onDraw(Canvas canvas)
+    {
+    	draw(canvas);
+    }
+    
+    @Override
+    public void draw(Canvas canvas)
     {
         if (canvas != null)
         {
@@ -236,8 +351,14 @@ public class GamePanel extends SurfaceView implements SurfaceHolder.Callback, Di
             try
             {
                 //make sure the screen object exists
-                if (screen != null)
-                    screen.render(canvas);
+                if (getScreen() != null)
+                {
+                    //scale to the screen size
+                    canvas.scale(getScaleRenderX(), getScaleRenderY());
+                
+                    //render the main screen containing the game and other screens
+                    getScreen().render(canvas);
+                }
             }
             catch (Exception e)
             {

@@ -4,19 +4,18 @@ import android.app.Activity;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
-import android.view.MenuItem;
 import android.view.Window;
 import android.view.WindowManager;
 
 import com.gamesbykevin.fallingblocks.panel.GamePanel;
 
-public class FallingBlocks extends Activity
+public class MainActivity extends Activity
 {
     //our game panel
     private GamePanel panel;
     
     /**
-     * Our website address where more games can be found
+     * Our web site address where more games can be found
      */
     public static final String WEBPAGE_MORE_GAMES_URL = "http://gamesbykevin.com";
 
@@ -30,19 +29,35 @@ public class FallingBlocks extends Activity
      */
     public static final String WEBPAGE_GAME_INSTRUCTIONS_URL = "http://gamesbykevin.com/2015/09/20/falling-blocks/";
     
-    /** Called when the activity is first created. */
+    /**
+     * The face book url
+     */
+    public static final String WEBPAGE_FACEBOOK_URL = "http://facebook.com/gamesbykevin";
+    
+    /**
+     * The twitter url
+     */
+    public static final String WEBPAGE_TWITTER_URL = "http://twitter.com/gamesbykevin";
+    
+    /**
+     * Called when the activity is first created
+     * @param savedInstanceState 
+     */
     @Override
     public void onCreate(Bundle savedInstanceState)
     {
-        //call parent create
-        super.onCreate(savedInstanceState);
-        
         //turn the title off
         super.requestWindowFeature(Window.FEATURE_NO_TITLE);
 
         //set the screen to full screen
-        super.getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
-
+        super.getWindow().setFlags(
+        	WindowManager.LayoutParams.FLAG_FULLSCREEN, 
+        	WindowManager.LayoutParams.FLAG_FULLSCREEN
+        );
+        
+        //call parent create
+        super.onCreate(savedInstanceState);
+        
         //if the panel has not been created
         if (getGamePanel() == null)
         {
@@ -58,11 +73,29 @@ public class FallingBlocks extends Activity
     }
     
     /**
+     * Override the finish call
+     */
+    @Override
+    public void finish()
+    {
+        //cleanup game panel if it exists
+        if (getGamePanel() != null)
+        {
+            getGamePanel().dispose();
+            setGamePanel(null);
+        }
+        
+        //call parent
+        super.finish();
+    }
+    
+    /**
      * Part of the activity life cycle
      */
     @Override
     public void onStart()
     {
+        //call parent
         super.onStart();
     }
     
@@ -72,6 +105,7 @@ public class FallingBlocks extends Activity
     @Override
     public void onStop()
     {
+        //call parent
         super.onStop();
     }
     
@@ -81,15 +115,8 @@ public class FallingBlocks extends Activity
     @Override
     public void onDestroy()
     {
-        //cleanup game panel
-        if (getGamePanel() != null)
-        {
-            getGamePanel().dispose();
-            setGamePanel(null);
-        }
-        
-        //finish the current activity
-        super.finish();
+        //finish the activity
+        this.finish();
         
         //perform final cleanup
         super.onDestroy();

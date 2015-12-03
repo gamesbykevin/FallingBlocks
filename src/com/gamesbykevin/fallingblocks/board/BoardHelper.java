@@ -158,7 +158,7 @@ public final class BoardHelper
             final int y = (int)options.get(index).getRow() * Block.DIMENSION_ANIMATION;
 
             //create a new animation
-            animation = new Animation(Images.getImage(Assets.ImageKey.Blocks), x, y, Block.DIMENSION_ANIMATION, Block.DIMENSION_ANIMATION);
+            animation = new Animation(Images.getImage(Assets.ImageGameKey.Blocks), x, y, Block.DIMENSION_ANIMATION, Block.DIMENSION_ANIMATION);
             
             //add animation to sprite sheet
             board.getSpritesheet().add(type, animation);
@@ -172,7 +172,7 @@ public final class BoardHelper
         final int y = (1 * Block.DIMENSION_ANIMATION);
         
         //add the cleared animation last
-        board.getSpritesheet().add(Piece.Type.Cleared, new Animation(Images.getImage(Assets.ImageKey.Blocks), x, y, Block.DIMENSION_ANIMATION, Block.DIMENSION_ANIMATION));
+        board.getSpritesheet().add(Piece.Type.Cleared, new Animation(Images.getImage(Assets.ImageGameKey.Blocks), x, y, Block.DIMENSION_ANIMATION, Block.DIMENSION_ANIMATION));
     }
     
     /**

@@ -10,7 +10,8 @@ import com.gamesbykevin.fallingblocks.board.Board;
 import com.gamesbykevin.fallingblocks.game.controller.Controller;
 
 import com.gamesbykevin.fallingblocks.player.*;
-import com.gamesbykevin.fallingblocks.screen.MainScreen;
+import com.gamesbykevin.fallingblocks.screen.OptionsScreen;
+import com.gamesbykevin.fallingblocks.screen.ScreenManager;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -22,7 +23,7 @@ import java.util.List;
 public class Game implements IGame
 {
     //our main screen object reference
-    private final MainScreen screen;
+    private final ScreenManager screen;
     
     //the players in the game
     private List<Player> players;
@@ -30,16 +31,6 @@ public class Game implements IGame
     //the controller for our game
     private Controller controller;
     
-    /**
-     * The different game modes
-     */
-    public enum Mode
-    {
-        SinglePlayerHuman,
-        SinglePlayerCpu,
-        TwoPlayerVsCpu
-    }
-
     /**
      * The amount of health damage to apply to opponent
      */
@@ -58,74 +49,23 @@ public class Game implements IGame
     //the cpu pieces will fall faster
     private static final float DIFFICULTY_CPU_EXTRA = 0.5f;
     
-    /**
-     * The game difficulty
-     */
-    public enum Difficulty
-    {
-        Normal,
-        Hard,
-        Easy
-    }
-    
-    public Game(final MainScreen screen, final Mode mode, final Difficulty difficulty) throws Exception
+    public Game(final ScreenManager screen) throws Exception
     {
         //our main screen object reference
         this.screen = screen;
         
-        //create a new player
-        this.players = new ArrayList<Player>();
-        
-        //setup the game mode
-        switch (mode)
-        {
-            case SinglePlayerHuman:
-                this.players.add(new Human(mode));
-                break;
-                
-            case SinglePlayerCpu:
-                this.players.add(new Cpu(mode));
-                break;
-                
-            case TwoPlayerVsCpu:
-                this.players.add(new Human(mode));
-                this.players.add(new Cpu(mode));
-                break;
-        }
-        
-        //determine the piece drop rate
-        for (Player player : getPlayers())
-        {
-            //setup the drop delay
-            switch (difficulty)
-            {
-                case Easy:
-                    player.setDropDelay((long)(Board.COMPLETED_LINE_DELAY * DIFFICULTY_RATIO_EASY));
-                    break;
-                    
-                case Normal:
-                    player.setDropDelay((long)(Board.COMPLETED_LINE_DELAY * DIFFICULTY_RATIO_NORMAL));
-                    break;
-                    
-                case Hard:
-                    player.setDropDelay((long)(Board.COMPLETED_LINE_DELAY * DIFFICULTY_RATIO_HARD));
-                    break;
-            }
-            
-            //the cpu pieces will fall slightly faster to make the challenge more competitive
-            if (!player.isHuman())
-                player.setDropDelay((int)(player.getDropDelay() * DIFFICULTY_CPU_EXTRA));
-        }
-        
         //create new controller
         this.controller = new Controller(this);
+        
+        //create a our list of players
+        this.players = new ArrayList<Player>();
     }
     
     /**
      * Get the main screen object reference
      * @return The main screen object reference
      */
-    public MainScreen getMainScreen()
+    public ScreenManager getScreen()
     {
         return this.screen;
     }
@@ -140,8 +80,56 @@ public class Game implements IGame
     }
     
     @Override
-    public void reset()
+    public void reset() throws Exception
     {
+    	//clear our players list
+    	this.players.clear();
+        
+        switch (screen.getScreenOptions().getIndex(OptionsScreen.INDEX_BUTTON_MODE))
+        {
+        	//single player human
+	        case 0:
+	        	this.players.add(new Human(false));
+	        	break;
+	        
+	        //single player cpu
+	        case 1:
+	        	this.players.add(new Cpu(false));
+	        	break;
+	        	
+	        //2 player versus cpu
+	        case 2:
+                this.players.add(new Human(true));
+                this.players.add(new Cpu(true));
+	        	break;
+        }
+        
+        //determine the piece drop rate
+        for (Player player : getPlayers())
+        {
+        	switch (screen.getScreenOptions().getIndex(OptionsScreen.INDEX_BUTTON_DIFFICULTY))
+        	{
+	        	//easy
+	        	case 0:
+	        		player.setDropDelay((long)(Board.COMPLETED_LINE_DELAY * DIFFICULTY_RATIO_EASY));
+	        		break;
+	        		
+	        	//normal
+	        	case 1:
+	        		player.setDropDelay((long)(Board.COMPLETED_LINE_DELAY * DIFFICULTY_RATIO_NORMAL));
+	        		break;
+	        		
+	        	//hard
+	        	case 2:
+	        		player.setDropDelay((long)(Board.COMPLETED_LINE_DELAY * DIFFICULTY_RATIO_HARD));
+	        		break;
+        	}
+        	
+            //the cpu pieces will fall slightly faster to make the challenge more competitive
+            if (!player.isHuman())
+                player.setDropDelay((int)(player.getDropDelay() * DIFFICULTY_CPU_EXTRA));
+        }
+        
         if (getPlayers() != null)
         {
             for (Player player : getPlayers())
@@ -152,10 +140,11 @@ public class Game implements IGame
             
             //make sure no existing audio
             Audio.stop();
-            
-            //play song
-            resumeMusic();
         }
+        
+        //reset the controller
+        if (getController() != null)
+        	getController().reset();
     }
     
     /**
@@ -164,7 +153,10 @@ public class Game implements IGame
     public void resumeMusic()
     {
         //play song
-        Audio.play(getPlayers().size() > 1 ? Assets.AudioKey.MusicVs : Assets.AudioKey.MusicSingle, true);
+        Audio.play(
+        	getPlayers().size() > 1 ? Assets.AudioGameKey.MusicVs : Assets.AudioGameKey.MusicSingle, 
+        	true
+        );
     }
     
     /**
@@ -203,9 +195,9 @@ public class Game implements IGame
      * @param x (x-coordinate)
      * @param y (y-coordinate)
      */
-    public void updateMotionEvent(final MotionEvent event, final float x, final float y)
+    public void update(final MotionEvent event, final float x, final float y)
     {
-        getController().updateMotionEvent(event, x, y);
+        getController().update(event, x, y);
     }
     
     /**
@@ -222,10 +214,10 @@ public class Game implements IGame
                 if (player.getBoard().hasGameover())
                 {
                     //set the state to game over
-                    screen.setState(MainScreen.State.GameOver);
+                    screen.setState(ScreenManager.State.GameOver);
                     
                     //default message
-                    screen.getGameoverScreen().setMessage("Game Over");
+                    screen.getScreenGameover().setMessage("Game Over");
                     
                     //if there is more than 1 player
                     if (getPlayers().size() > 1)
@@ -233,24 +225,24 @@ public class Game implements IGame
                         if (player.isHuman())
                         {
                             //set message
-                            screen.getGameoverScreen().setMessage("Game Over, You Lose");
+                            screen.getScreenGameover().setMessage("Game Over, You Lose");
 
                             //play song
-                            Audio.play(Assets.AudioKey.GameoverLose);
+                            Audio.play(Assets.AudioGameKey.GameoverLose);
                         }
                         else
                         {
                             //set message
-                            screen.getGameoverScreen().setMessage("Game Over, You Win");
+                            screen.getScreenGameover().setMessage("Game Over, You Win");
                             
                             //play song
-                            Audio.play(Assets.AudioKey.GameoverWin);
+                            Audio.play(Assets.AudioGameKey.GameoverWin);
                         }
                     }
                     else
                     {
                         //play song
-                        Audio.play(Assets.AudioKey.GameoverLose);
+                        Audio.play(Assets.AudioGameKey.GameoverLose);
                     }
                     
                     break;

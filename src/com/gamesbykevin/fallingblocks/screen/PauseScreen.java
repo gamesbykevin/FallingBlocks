@@ -9,7 +9,6 @@ import android.view.MotionEvent;
 import com.gamesbykevin.androidframework.resources.Disposable;
 import com.gamesbykevin.androidframework.resources.Font;
 import com.gamesbykevin.androidframework.screen.Screen;
-
 import com.gamesbykevin.fallingblocks.assets.Assets;
 import com.gamesbykevin.fallingblocks.panel.GamePanel;
 
@@ -28,15 +27,15 @@ public class PauseScreen implements Screen, Disposable
     private final int pixelW, pixelH;
     
     //our main screen reference
-    private final MainScreen screen;
+    private final ScreenManager screen;
     
     //object to paint background
     private Paint paint;
     
     //store the previous state
-    private MainScreen.State previous;
+    private ScreenManager.State previous;
     
-    public PauseScreen(final MainScreen screen)
+    public PauseScreen(final ScreenManager screen)
     {
         //store our parent reference
         this.screen = screen;
@@ -44,8 +43,8 @@ public class PauseScreen implements Screen, Disposable
         //create paint text object
         this.paint = new Paint();
         this.paint.setColor(Color.WHITE);
+        this.paint.setTypeface(Font.getFont(Assets.FontMenuKey.Default));
         this.paint.setTextSize(64f);
-        this.paint.setTypeface(Font.getFont(Assets.FontKey.Default));
         
         //create temporary rectangle
         Rect tmp = new Rect();
@@ -61,12 +60,12 @@ public class PauseScreen implements Screen, Disposable
     /**
      * Set the previous state.<br>
      * We need this, so when un-pause we know where to go back
-     * @param previous The previous state
+     * @param previous The previous state, can't be set to paused
      */
-    public void setStatePrevious(final MainScreen.State previous)
+    public void setStatePrevious(final ScreenManager.State previous)
     {
-        //only store if not pause
-        if (previous != MainScreen.State.Paused)
+        //only store if not paused
+        if (previous != ScreenManager.State.Paused)
             this.previous = previous;
     }
     
@@ -74,9 +73,18 @@ public class PauseScreen implements Screen, Disposable
      * Get the previous state
      * @return The previous state before the game was paused
      */
-    public MainScreen.State getStatePrevious()
+    public ScreenManager.State getStatePrevious()
     {
         return this.previous;
+    }
+    
+    /**
+     * Reset any necessary screen elements here
+     */
+    @Override
+    public void reset()
+    {
+        //do we need anything here
     }
     
     @Override
@@ -87,15 +95,12 @@ public class PauseScreen implements Screen, Disposable
             //return to the previous state
             screen.setState(previous);
             
-            //if we are going back to the game, resume audio
-            if (previous == MainScreen.State.Running)
-                screen.getGame().resumeMusic();
-            
-            //return true
-            return true;
+            //no need to return additional events
+            return false;
         }
         
-        return false;
+        //return additional motion events
+        return true;
     }
     
     @Override

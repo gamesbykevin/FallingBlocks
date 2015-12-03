@@ -9,11 +9,12 @@ import android.view.MotionEvent;
 import com.gamesbykevin.androidframework.awt.Button;
 import com.gamesbykevin.androidframework.resources.Audio;
 import com.gamesbykevin.androidframework.resources.Disposable;
-import com.gamesbykevin.androidframework.resources.Font;
 import com.gamesbykevin.androidframework.resources.Images;
 import com.gamesbykevin.androidframework.screen.Screen;
 import com.gamesbykevin.fallingblocks.assets.Assets;
 import com.gamesbykevin.fallingblocks.panel.GamePanel;
+
+import java.util.HashMap;
 
 /**
  * The exit screen, when the player wants to go back to the menu
@@ -26,28 +27,32 @@ public class ExitScreen implements Screen, Disposable
      */
     private static final String MESSAGE = "Go back to menu?";
     
-    //the dimensions of the text message above
-    private final int pixelW, pixelH;
+    //where our message is to be rendered
+    private final int messageX, messageY;
     
     //our main screen reference
-    private final MainScreen screen;
+    private final ScreenManager screen;
     
     //object to paint background
     private Paint paint;
     
-    //the button to confirm or cancel
-    private Button exitConfirm, exitCancel;
+    //all of the buttons for the player to control
+    private HashMap<Assets.ImageMenuKey, Button> buttons;
     
-    public ExitScreen(final MainScreen screen)
+    /**
+     * The dimensions of the buttons
+     */
+    private static final int BUTTON_DIMENSION = 256;
+    
+    public ExitScreen(final ScreenManager screen)
     {
         //store our parent reference
         this.screen = screen;
         
         //create paint text object
-        this.paint = new Paint();
+        this.paint = new Paint(screen.getPaint());
         this.paint.setColor(Color.WHITE);
-        this.paint.setTextSize(48f);
-        this.paint.setTypeface(Font.getFont(Assets.FontKey.Default));
+        this.paint.setTextSize(64F);
         
         //create temporary rectangle
         Rect tmp = new Rect();
@@ -55,21 +60,40 @@ public class ExitScreen implements Screen, Disposable
         //get the rectangle around the message
         paint.getTextBounds(MESSAGE, 0, MESSAGE.length(), tmp);
         
-        //store the dimensions
-        pixelW = tmp.width();
-        pixelH = tmp.height();
+        //calculate where text message is to be rendered
+        messageX = (GamePanel.WIDTH / 2) - (tmp.width() / 2);
+        messageY = (GamePanel.HEIGHT / 2) - (tmp.height() / 2);
         
         //create buttons
-        this.exitCancel  = new Button(Images.getImage(Assets.ImageKey.ExitCancel));
-        this.exitConfirm = new Button(Images.getImage(Assets.ImageKey.ExitConfirm));
+        this.buttons = new HashMap<Assets.ImageMenuKey, Button>();
+        this.buttons.put(Assets.ImageMenuKey.Cancel, new Button(Images.getImage(Assets.ImageMenuKey.Cancel)));
+        this.buttons.put(Assets.ImageMenuKey.Confirm, new Button(Images.getImage(Assets.ImageMenuKey.Confirm)));
+        
+        //position the buttons below the message
+        final int y = messageY + tmp.height();
         
         //position buttons
-        this.exitCancel.setX(670);
-        this.exitCancel.setY(875);
-        this.exitCancel.updateBounds();
-        this.exitConfirm.setX(190);
-        this.exitConfirm.setY(875);
-        this.exitConfirm.updateBounds();
+        this.buttons.get(Assets.ImageMenuKey.Confirm).setX(messageX);
+        this.buttons.get(Assets.ImageMenuKey.Confirm).setY(y);
+        this.buttons.get(Assets.ImageMenuKey.Cancel).setX(messageX + tmp.width() - BUTTON_DIMENSION);
+        this.buttons.get(Assets.ImageMenuKey.Cancel).setY(y);
+        
+        //set the bounds of each button
+        for (Button button : buttons.values())
+        {
+            button.setWidth(BUTTON_DIMENSION);
+            button.setHeight(BUTTON_DIMENSION);
+            button.updateBounds();
+        }
+    }
+    
+    /**
+     * Reset any necessary screen elements here
+     */
+    @Override
+    public void reset()
+    {
+        //do we need anything here
     }
     
     @Override
@@ -77,27 +101,32 @@ public class ExitScreen implements Screen, Disposable
     {
         if (event.getAction() == MotionEvent.ACTION_UP)
         {
-            if (this.exitCancel.contains(x, y))
+            if (buttons.get(Assets.ImageMenuKey.Cancel).contains(x, y))
             {
                 //if cancel, go back to game
-                screen.setState(MainScreen.State.Running);
+                screen.setState(ScreenManager.State.Running);
                 
                 //play sound effect
-                Audio.play(Assets.AudioKey.SettingChange);
+                Audio.play(Assets.AudioMenuKey.Selection);
+                
+                //return true;
+                return false;
             }
-            else if (this.exitConfirm.contains(x, y))
+            else if (buttons.get(Assets.ImageMenuKey.Confirm).contains(x, y))
             {
                 //if confirm, go back to menu
-                screen.setState(MainScreen.State.Ready);
+                screen.setState(ScreenManager.State.Ready);
                 
                 //play sound effect
-                Audio.play(Assets.AudioKey.SettingChange);
+                Audio.play(Assets.AudioMenuKey.Selection);
+                
+                //return false;
+                return false;
             }
-            
-            return true;
         }
         
-        return false;
+        //yes we want additional motion events
+        return true;
     }
     
     @Override
@@ -111,32 +140,30 @@ public class ExitScreen implements Screen, Disposable
     {
         if (paint != null)
         {
-            //calculate middle
-            final int x = (GamePanel.WIDTH / 2) - (pixelW / 2);
-            final int y = (GamePanel.HEIGHT / 2) - (pixelH / 2);
-             
             //draw text
-            canvas.drawText(MESSAGE, x, y, paint);
+            canvas.drawText(MESSAGE, messageX, messageY, paint);
         }
         
-        //render buttons
-        this.exitConfirm.render(canvas);
-        this.exitCancel.render(canvas);
+        buttons.get(Assets.ImageMenuKey.Cancel).render(canvas);
+        buttons.get(Assets.ImageMenuKey.Confirm).render(canvas);
     }
     
     @Override
     public void dispose()
     {
-        if (exitConfirm != null)
+        if (buttons != null)
         {
-            exitConfirm.dispose();
-            exitConfirm = null;
-        }
-        
-        if (exitCancel != null)
-        {
-            exitCancel.dispose();
-            exitCancel = null;
+            for (Button button : buttons.values())
+            {
+                if (button != null)
+                {
+                    button.dispose();
+                    button = null;
+                }
+            }
+            
+            buttons.clear();
+            buttons = null;
         }
         
         if (paint != null)

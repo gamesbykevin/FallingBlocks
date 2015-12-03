@@ -3,7 +3,6 @@ package com.gamesbykevin.fallingblocks.player;
 import com.gamesbykevin.fallingblocks.board.Board;
 import com.gamesbykevin.fallingblocks.board.BoardHelper;
 import com.gamesbykevin.fallingblocks.board.piece.Piece;
-import com.gamesbykevin.fallingblocks.game.Game;
 
 /**
  * A computer controlled player
@@ -32,15 +31,9 @@ public final class Cpu extends Player
     //bumpiness score weight
     private static final double WEIGHT_BUMPINESS = -0.24077;
     
-    //the desired game mode
-    private final Game.Mode mode;
-    
-    public Cpu(final Game.Mode mode) throws Exception
+    public Cpu(final boolean multiplayer) throws Exception
     {
-        super(mode, false);
-        
-        //store the desired game mode
-        this.mode = mode;
+        super(multiplayer, false);
     }
     
     @Override
@@ -86,7 +79,7 @@ public final class Cpu extends Player
                      * The piece will drop here, don't need to do anything.<br>
                      * We can force the piece to drop if single player cpu to speed up the game
                      */
-                    if (mode == Game.Mode.SinglePlayerCpu)
+                    if (super.isMultiPlayer())
                         setAction(Action.MOVE_DOWN);
                 }
             }

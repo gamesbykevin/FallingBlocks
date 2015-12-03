@@ -11,5 +11,5 @@ public interface IGame extends Disposable
     /**
      * Logic to restart the game
      */
-    public void reset();
+    public void reset() throws Exception;
 }

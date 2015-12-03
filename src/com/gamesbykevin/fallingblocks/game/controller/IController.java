@@ -11,13 +11,18 @@ import com.gamesbykevin.androidframework.resources.Disposable;
  */
 public interface IController extends Disposable
 {
+	/**
+	 * Logic to reset
+	 */
+	public void reset();
+	
     /**
      * Update logic when motion event occurs
      * @param event Motion Event
      * @param x x-coordinate
      * @param y y-coordinate
      */
-    public void updateMotionEvent(final MotionEvent event, final float x, final float y);
+    public void update(final MotionEvent event, final float x, final float y);
     
     /**
      * Render our controller

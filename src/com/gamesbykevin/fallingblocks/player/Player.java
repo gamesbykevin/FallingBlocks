@@ -10,7 +10,6 @@ import com.gamesbykevin.fallingblocks.board.Board;
 import com.gamesbykevin.fallingblocks.board.BoardHelper;
 import com.gamesbykevin.fallingblocks.board.piece.Block;
 import com.gamesbykevin.fallingblocks.board.piece.Piece;
-import com.gamesbykevin.fallingblocks.game.Game;
 import com.gamesbykevin.fallingblocks.player.stats.Stats;
 
 /**
@@ -29,78 +28,70 @@ public abstract class Player extends PlayerHelper implements IPlayer, Disposable
     //our stats object
     private Stats stats;
     
-    //the game mode
-    private final Game.Mode mode;
+    //are we playing multiplayer
+    private final boolean multiplayer;
     
     /**
      * Create a new player
-     * @param mode The desired game mode
+     * @param multiplayer Are we playing multiplayer
      * @param human Is this player human?
      * @throws Exception
      */
-    protected Player(final Game.Mode mode, final boolean human) throws Exception
+    protected Player(final boolean multiplayer, final boolean human) throws Exception
     {
         super(human);
         
-        //store the game mode
-        this.mode = mode;
+        //store multi player setting
+        this.multiplayer = multiplayer;
         
         //create new stats object
-        this.stats = new Stats((getMode() == Game.Mode.TwoPlayerVsCpu), isHuman() ? "Player" : "Cpu");
+        this.stats = new Stats(multiplayer, isHuman() ? "Player" : "Cpu");
         
         //determine the dimensions/location of the board and stat window
-        switch (getMode())
+        if (multiplayer)
         {
-            case SinglePlayerCpu:
-            case SinglePlayerHuman:
-                
-                setBlockDimension(Block.DIMENSION_LARGE);
-                
-                //create a new board
-                this.board = new Board(getBlockDimension());
-                
+            //determine size by human or not
+            setBlockDimension((human) ? Block.DIMENSION_REGULAR : Block.DIMENSION_SMALL);
+            
+            //create a new board
+            this.board = new Board(getBlockDimension());
+            
+            //the human and cpu will be placed accordingly
+            if (isHuman())
+            {
                 //position board
                 getBoard().setX(START_X);
-                getBoard().setY(START_Y);
+                getBoard().setY(1300 - START_Y - getBoard().getHeight());
 
                 //position stats
                 getStats().setX(getBoard().getX() + getBoard().getWidth() + START_X);
-                getStats().setY(getBoard());
-                break;
-                
-            case TwoPlayerVsCpu:
-                
-                //determine size by human or not
-                setBlockDimension((human) ? Block.DIMENSION_REGULAR : Block.DIMENSION_SMALL);
-                
-                //create a new board
-                this.board = new Board(getBlockDimension());
-                
-                //the human and cpu will be placed accordingly
-                if (isHuman())
-                {
-                    //position board
-                    getBoard().setX(START_X);
-                    getBoard().setY(1300 - START_Y - getBoard().getHeight());
+                getStats().setY(getBoard().getY() + getBoard().getHeight() - getStats().getHeight());
+            }
+            else
+            {
+                //position board
+                getBoard().setX((Block.DIMENSION_REGULAR * Board.COLS) + (START_X * 15));
+                getBoard().setY(getStats().getHeight() + (START_Y * 2));
 
-                    //position stats
-                    getStats().setX(getBoard().getX() + getBoard().getWidth() + START_X);
-                    getStats().setY(getBoard().getY() + getBoard().getHeight() - getStats().getHeight());
-                }
-                else
-                {
-                    //position board
-                    getBoard().setX((Block.DIMENSION_REGULAR * Board.COLS) + (START_X * 15));
-                    getBoard().setY(getStats().getHeight() + (START_Y * 2));
+                //position stats
+                getStats().setX(getBoard());
+                getStats().setY(START_Y);
+            }
+        }
+        else
+        {
+            setBlockDimension(Block.DIMENSION_LARGE);
+            
+            //create a new board
+            this.board = new Board(getBlockDimension());
+            
+            //position board
+            getBoard().setX(START_X);
+            getBoard().setY(START_Y);
 
-                    //position stats
-                    getStats().setX(getBoard());
-                    getStats().setY(START_Y);
-                }
-                break;
-                
-            default:
-                throw new Exception("Mode not setup here " + getMode().toString());
+            //position stats
+            getStats().setX(getBoard().getX() + getBoard().getWidth() + START_X);
+            getStats().setY(getBoard());
         }
         
         //setup animations now the board has been created
@@ -108,6 +99,11 @@ public abstract class Player extends PlayerHelper implements IPlayer, Disposable
         
         //store the previous piece drop time
         resetTime();
+    }
+    
+    protected boolean isMultiPlayer()
+    {
+    	return this.multiplayer;
     }
     
     @Override
@@ -119,15 +115,6 @@ public abstract class Player extends PlayerHelper implements IPlayer, Disposable
         resetTime();
         this.current = null;
         this.next = null;
-    }
-    
-    /**
-     * Get the game mode
-     * @return The assigned game mode
-     */
-    private Game.Mode getMode()
-    {
-        return this.mode;
     }
     
     /**
@@ -161,7 +148,7 @@ public abstract class Player extends PlayerHelper implements IPlayer, Disposable
                 return false;
             }
             
-            //rotation was successfult
+            //rotation was successful
             return true;
         }
         
@@ -319,12 +306,12 @@ public abstract class Player extends PlayerHelper implements IPlayer, Disposable
                             getBoard().setComplete(true);
                             
                             //play sound effect
-                            Audio.play(Assets.AudioKey.CompletedLine);
+                            Audio.play(Assets.AudioGameKey.CompletedLine);
                         }
                         else
                         {
                             //no completed line, play place piece sound effect
-                            Audio.play(Assets.AudioKey.PiecePlace);
+                            Audio.play(Assets.AudioGameKey.PiecePlace);
                         }
                         
                         //remove the current piece
@@ -370,7 +357,7 @@ public abstract class Player extends PlayerHelper implements IPlayer, Disposable
                             if (isHuman())
                             {
                                 //play sound effect
-                                Audio.play(Assets.AudioKey.PieceRotate);
+                                Audio.play(Assets.AudioGameKey.PieceRotate);
                             }
                         }
                     }
@@ -473,22 +460,16 @@ public abstract class Player extends PlayerHelper implements IPlayer, Disposable
             if (getNext() != null)
             {
                 //reference to scale the piece
-                float scale;
+                final float scale;
                 
-                //determine how to scale according to game mode and human status
-                switch (getMode())
+                //determine how to scale if playing multi player 
+                if (multiplayer)
                 {
-                    case SinglePlayerHuman:
-                    case SinglePlayerCpu:
-                        scale = 0.5f;
-                        break;
-                        
-                    case TwoPlayerVsCpu:
-                        scale = (isHuman()) ? 0.5f : 1.0f;
-                        break;
-                        
-                    default:
-                        throw new Exception("Mode is not setup here: " + getMode().toString());
+                	scale = (isHuman()) ? 0.5f : 1.0f;
+                }
+                else
+                {
+                	scale = 0.5f;
                 }
                 
                 getNext().render(canvas, getBoard(), scale, getStats().getOffsetX(), getStats().getOffsetY());

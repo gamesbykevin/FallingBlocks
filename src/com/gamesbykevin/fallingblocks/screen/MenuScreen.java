@@ -9,8 +9,11 @@ import com.gamesbykevin.androidframework.resources.Audio;
 import com.gamesbykevin.androidframework.resources.Disposable;
 import com.gamesbykevin.androidframework.resources.Images;
 import com.gamesbykevin.androidframework.screen.Screen;
-import com.gamesbykevin.fallingblocks.FallingBlocks;
+import com.gamesbykevin.fallingblocks.MainActivity;
 import com.gamesbykevin.fallingblocks.assets.Assets;
+import com.gamesbykevin.fallingblocks.panel.GamePanel;
+
+import java.util.HashMap;
 
 /**
  * Our main menu
@@ -21,118 +24,278 @@ public class MenuScreen implements Screen, Disposable
     //the logo
     private final Bitmap logo;
     
-    //the buttons in our menu
-    private Button start, exit, settings, instructions, more, rate;
-    
     //our main screen reference
-    private final MainScreen screen;
+    private final ScreenManager screen;
     
-    public MenuScreen(final MainScreen screen)
+    //the buttons on the menu screen
+    private HashMap<Key, Button> buttons;
+    
+    /**
+     * Button text to display to exit the game
+     */
+    public static final String BUTTON_TEXT_EXIT_GAME = "Exit Game";
+    
+    /**
+     * Button text to display to rate the game
+     */
+    public static final String BUTTON_TEXT_RATE_APP = "Rate App";
+    
+    /**
+     * Button text to display to start a new game
+     */
+    public static final String BUTTON_TEXT_START_GAME = "Start Game";
+    
+    /**
+     * Button text to display for the options
+     */
+    public static final String BUTTON_TEXT_OPTIONS = "Options";
+    
+    /**
+     * Button text to display for more games
+     */
+    public static final String BUTTON_TEXT_MORE_GAMES = "More Games";
+    
+    private enum Key
+    {
+        Start, Exit, Settings, Instructions, More, Rate, Twitter, Facebook
+    }
+    
+    //start new game, and did we notify user
+    private boolean reset = false, notify = false;
+    
+    /**
+     * Dimension of the standard menu button
+     */
+    public static final int BUTTON_WIDTH = 500;
+    
+    /**
+     * Dimension of the standard menu button
+     */
+    public static final int BUTTON_HEIGHT = 128;
+    
+    /**
+     * The size of our icon buttons
+     */
+    public static final int ICON_DIMENSION = 128;
+    
+    public MenuScreen(final ScreenManager screen)
     {
         //store reference to the logo
-        this.logo = Images.getImage(Assets.ImageKey.Logo);
+        this.logo = Images.getImage(Assets.ImageMenuKey.Logo);
         
         //store our screen reference
         this.screen = screen;
         
-        final int x = 230;
-        int y = 350;
+        //create a new hash map
+        this.buttons = new HashMap<Key, Button>();
         
-        final int addY = 200;
+        //temporary button
+        Button tmp;
         
-        //create buttons
-        this.start = new Button(Images.getImage(Assets.ImageKey.MenuStart));
-        this.start.setX(x);
-        this.start.setY(y);
-        this.start.updateBounds();
+        int x = ScreenManager.BUTTON_X;
+        int y = ScreenManager.BUTTON_Y;
         
-        y += addY;
-        this.settings = new Button(Images.getImage(Assets.ImageKey.MenuSettings));
-        this.settings.setX(x);
-        this.settings.setY(y);
-        this.settings.updateBounds();
+        tmp = new Button(Images.getImage(Assets.ImageMenuKey.Button));
+        tmp.setX(x);
+        tmp.setY(y);
+        tmp.addDescription(BUTTON_TEXT_START_GAME);
+        this.buttons.put(Key.Start, tmp);
         
-        y += addY;
-        this.instructions = new Button(Images.getImage(Assets.ImageKey.MenuInstructions));
-        this.instructions.setX(x);
-        this.instructions.setY(y);
-        this.instructions.updateBounds();
+        y += ScreenManager.BUTTON_Y_INCREMENT;
+        tmp = new Button(Images.getImage(Assets.ImageMenuKey.Button));
+        tmp.setX(x);
+        tmp.setY(y);
+        tmp.addDescription(BUTTON_TEXT_OPTIONS);
+        this.buttons.put(Key.Settings, tmp);
         
-        y += addY;
-        this.rate = new Button(Images.getImage(Assets.ImageKey.MenuRate));
-        this.rate.setX(x);
-        this.rate.setY(y);
-        this.rate.updateBounds();
+        y += ScreenManager.BUTTON_Y_INCREMENT;
+        tmp = new Button(Images.getImage(Assets.ImageMenuKey.Button));
+        tmp.setX(x);
+        tmp.setY(y);
+        tmp.addDescription(BUTTON_TEXT_RATE_APP);
+        this.buttons.put(Key.Rate, tmp);
         
-        y += addY;
-        this.more = new Button(Images.getImage(Assets.ImageKey.MenuMore));
-        this.more.setX(x);
-        this.more.setY(y);
-        this.more.updateBounds();
+        y += ScreenManager.BUTTON_Y_INCREMENT;
+        tmp = new Button(Images.getImage(Assets.ImageMenuKey.Button));
+        tmp.setX(x);
+        tmp.setY(y);
+        tmp.addDescription(BUTTON_TEXT_MORE_GAMES);
+        this.buttons.put(Key.More, tmp);
         
-        y += addY;
-        this.exit = new Button(Images.getImage(Assets.ImageKey.MenuExit));
-        this.exit.setX(x);
-        this.exit.setY(y);
-        this.exit.updateBounds();
+        y += ScreenManager.BUTTON_Y_INCREMENT;
+        tmp = new Button(Images.getImage(Assets.ImageMenuKey.Button));
+        tmp.setX(x);
+        tmp.setY(y);
+        tmp.addDescription(BUTTON_TEXT_EXIT_GAME);
+        this.buttons.put(Key.Exit, tmp);
+        
+        //add social media icons
+        addIcons();
+        
+        for (Key key : Key.values())
+        {
+        	//get the current button
+        	Button button = buttons.get(key);
+        	
+        	switch (key)
+        	{
+	        	case Twitter:
+	        	case Facebook:
+	        	case Instructions:
+                	button.setWidth(ICON_DIMENSION);
+                	button.setHeight(ICON_DIMENSION);
+                	button.updateBounds();
+	        		break;
+        		
+        		default:
+                	button.setWidth(BUTTON_WIDTH);
+                	button.setHeight(BUTTON_HEIGHT);
+                    button.updateBounds();
+                    button.positionText(screen.getPaint());
+        			break;
+        	}
+        }
+    }
+    
+    /**
+     * Add icons, including links to social media
+     */
+    private void addIcons()
+    {
+        Button tmp = new Button(Images.getImage(Assets.ImageMenuKey.Instructions));
+        tmp.setX(GamePanel.WIDTH - (ICON_DIMENSION * 4.5));
+        tmp.setY(GamePanel.HEIGHT - (ICON_DIMENSION * 1.25));
+        this.buttons.put(Key.Instructions, tmp);
+        
+        tmp = new Button(Images.getImage(Assets.ImageMenuKey.Facebook));
+        tmp.setX(GamePanel.WIDTH - (ICON_DIMENSION * 3));
+        tmp.setY(GamePanel.HEIGHT - (ICON_DIMENSION * 1.25));
+        this.buttons.put(Key.Facebook, tmp);
+        
+        tmp = new Button(Images.getImage(Assets.ImageMenuKey.Twitter));
+        tmp.setX(GamePanel.WIDTH - (ICON_DIMENSION * 1.5));
+        tmp.setY(GamePanel.HEIGHT - (ICON_DIMENSION * 1.25));
+        this.buttons.put(Key.Twitter, tmp);
+    }
+    
+    /**
+     * Reset any necessary screen elements here
+     */
+    @Override
+    public void reset()
+    {
+        //do we need anything here
     }
     
     @Override
     public boolean update(final MotionEvent event, final float x, final float y) throws Exception
     {
+        //if the game is to reset, don't continue
+        if (reset)
+            return false;
+        
         if (event.getAction() == MotionEvent.ACTION_UP)
         {
-            if (start.contains(x, y))
-            {
-                //play sound effect
-                Audio.play(Assets.AudioKey.SettingChange);
-                
-                //set running state
-                screen.setState(MainScreen.State.Running);
-
-                //create the game
-                screen.createGame();
-            }
-            else if (settings.contains(x, y))
-            {
-                //play sound effect
-                Audio.play(Assets.AudioKey.SettingChange);
-                
-                //set the state
-                screen.setState(MainScreen.State.Options);
-            }
-            else if (instructions.contains(x, y))
-            {
-                //play sound effect
-                Audio.play(Assets.AudioKey.SettingChange);
-                
-                //go to instructions
-                this.screen.getPanel().getActivity().openWebpage(FallingBlocks.WEBPAGE_GAME_INSTRUCTIONS_URL);
-            }
-            else if (rate.contains(x, y))
-            {
-                //play sound effect
-                Audio.play(Assets.AudioKey.SettingChange);
-                
-                //go to web page
-                this.screen.getPanel().getActivity().openWebpage(FallingBlocks.WEBPAGE_RATE_URL);
-            }
-            else if (more.contains(x, y))
-            {
-                //play sound effect
-                Audio.play(Assets.AudioKey.SettingChange);
-                
-                //go to web page
-                this.screen.getPanel().getActivity().openWebpage(FallingBlocks.WEBPAGE_MORE_GAMES_URL);
-            }
-            else if (exit.contains(x, y))
-            {
-                //play sound effect
-                Audio.play(Assets.AudioKey.SettingChange);
-                
-                //exit game
-                this.screen.getPanel().getActivity().finish();
-            }
+        	//check every button
+        	for (Key key : Key.values())
+        	{
+        		//get the current button
+        		Button button = buttons.get(key);
+        		
+        		//if the coordinates are contained in the button
+        		if (button.contains(x, y))
+        		{
+        			//do something different depending on the key
+        			switch (key)
+        			{
+		        		case Instructions:
+		                    //play sound effect
+		                    Audio.play(Assets.AudioMenuKey.Selection);
+		                    
+		                    //go to instructions
+		                    this.screen.getPanel().getActivity().openWebpage(MainActivity.WEBPAGE_GAME_INSTRUCTIONS_URL);
+		                    
+		                    //we do not request any additional events
+		                    return false;
+		                    
+		        		case Facebook:
+		                    //play sound effect
+		                    Audio.play(Assets.AudioMenuKey.Selection);
+		                    
+		                    //go to instructions
+		                    this.screen.getPanel().getActivity().openWebpage(MainActivity.WEBPAGE_FACEBOOK_URL);
+		                    
+		                    //we do not request any additional events
+		                    return false;
+		                    
+		        		case Twitter:
+		                    //play sound effect
+		                    Audio.play(Assets.AudioMenuKey.Selection);
+		                    
+		                    //go to instructions
+		                    this.screen.getPanel().getActivity().openWebpage(MainActivity.WEBPAGE_TWITTER_URL);
+		                    
+		                    //we do not request any additional events
+		                    return false;
+		        			
+		        		case Start:
+		                    //flag reset
+		                    reset = true;
+		                    
+		                    //flag notify false
+		                    notify = false;
+		                    
+		                    //play sound effect
+		                    Audio.play(Assets.AudioMenuKey.Selection);
+		                    
+		                    //we do not request any additional events
+		                    return false;
+		                    
+	        			case Exit:
+	                        //play sound effect
+	                        Audio.play(Assets.AudioMenuKey.Selection);
+	                        
+	                        //exit game
+	                        this.screen.getPanel().getActivity().finish();
+	                        
+	                        //we do not request any additional events
+	                        return false;
+	                        
+	        			case Settings: 
+	                        //set the state
+	                        screen.setState(ScreenManager.State.Options);
+	                        
+	                        //play sound effect
+	                        Audio.play(Assets.AudioMenuKey.Selection);
+	                        
+	                        //we do not request any additional events
+	                        return false;
+	                        
+	    				case More: 
+	    	                //play sound effect
+	    	                Audio.play(Assets.AudioMenuKey.Selection);
+	    	                
+	    	                //go to web page
+	    	                this.screen.getPanel().getActivity().openWebpage(MainActivity.WEBPAGE_MORE_GAMES_URL);
+	    	                
+	    	                //we do not request any additional events
+	    	                return false;
+	    	                
+						case Rate:
+			                //play sound effect
+			                Audio.play(Assets.AudioMenuKey.Selection);
+			                
+			                //go to web page
+			                this.screen.getPanel().getActivity().openWebpage(MainActivity.WEBPAGE_RATE_URL);
+			                
+			                //we do not request any additional events
+			                return false;
+			                
+		                default:
+		                	throw new Exception("Key not handled here: " + key);
+        			}
+        		}
+        	}
         }
         
         //return true
@@ -142,61 +305,88 @@ public class MenuScreen implements Screen, Disposable
     @Override
     public void update() throws Exception
     {
-        //no updates needed here
+    	//only reset if we notified the user by displaying the splash screen
+        if (reset && notify)
+        {
+            //load game assets
+            Assets.load(screen.getPanel().getActivity());
+
+            //create the game
+            screen.getScreenGame().createGame();
+
+            //set running state
+            screen.setState(ScreenManager.State.Running);
+            
+            //we are done resetting
+            reset = false;
+        }
     }
     
     @Override
     public void render(final Canvas canvas) throws Exception
     {
-        //draw main logo
-        canvas.drawBitmap(logo, 104, 100, null);
-        
-        //draw the menu buttons
-        start.render(canvas);
-        settings.render(canvas);
-        instructions.render(canvas);
-        rate.render(canvas);
-        more.render(canvas);
-        exit.render(canvas);
+        if (reset)
+        {
+            //render splash screen
+            canvas.drawBitmap(Images.getImage(Assets.ImageMenuKey.Splash), 0, 0, null);
+            
+            //we notified the user
+            notify = true;
+        }
+        else
+        {
+	        //draw main logo
+	        canvas.drawBitmap(logo, ScreenManager.LOGO_X, ScreenManager.LOGO_Y, null);
+	
+	        //draw the menu buttons
+	        if (buttons != null)
+	        {
+	        	for (Key key : Key.values())
+	        	{
+	        		//get the current button
+	        		Button button = buttons.get(key);
+	        		
+	        		//render the button accordingly
+	        		switch (key)
+	        		{
+		        		case Instructions:
+		        		case Facebook:
+		        		case Twitter:
+		        			button.render(canvas);
+		        			break;
+		        			
+		        		case Start:
+	        			case Exit:
+	        			case Settings: 
+        				case More: 
+    					case Rate:
+	        				button.render(canvas, screen.getPaint());
+	        				break;
+	        				
+        				default:
+        					throw new Exception("Key is not handled here: " + key);
+	        		}
+	        	}
+	        }
+        }
     }
     
     @Override
     public void dispose()
     {
-        if (start != null)
+        if (buttons != null)
         {
-            start.dispose();
-            start = null;
-        }
-        
-        if (exit != null)
-        {
-            exit.dispose();
-            exit = null;
-        }
-        
-        if (settings != null)
-        {
-            settings.dispose();
-            settings = null;
-        }
-        
-        if (instructions != null)
-        {
-            instructions.dispose();
-            instructions = null;
-        }
-        
-        if (more != null)
-        {
-            more.dispose();
-            more = null;
-        }
-        
-        if (rate != null)
-        {
-            rate.dispose();
-            rate = null;
+            for (Button button : buttons.values())
+            {
+                if (button != null)
+                {
+                    button.dispose();
+                    button = null;
+                }
+            }
+            
+            buttons.clear();
+            buttons = null;
         }
     }
 }

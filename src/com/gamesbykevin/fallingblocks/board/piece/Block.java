@@ -6,7 +6,6 @@ import java.util.UUID;
 
 import com.gamesbykevin.androidframework.base.Entity;
 import com.gamesbykevin.androidframework.resources.Disposable;
-import com.gamesbykevin.fallingblocks.board.Board;
 
 /**
  * A bunch of blocks create a piece
