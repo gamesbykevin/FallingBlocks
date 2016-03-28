@@ -3,8 +3,9 @@ package com.gamesbykevin.fallingblocks.screen;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Paint;
-import android.util.SparseArray;
 import android.view.MotionEvent;
+
+import java.util.HashMap;
 
 import com.gamesbykevin.androidframework.awt.Button;
 import com.gamesbykevin.androidframework.resources.Audio;
@@ -26,7 +27,7 @@ public class OptionsScreen implements Screen, Disposable
     private final Bitmap logo;
     
     //list of buttons
-    private SparseArray<Button> buttons;
+    private HashMap<Key, Button> buttons;
     
     //our main screen reference
     private final ScreenManager screen;
@@ -36,15 +37,42 @@ public class OptionsScreen implements Screen, Disposable
     
     //our paint object for this screen
     private Paint paint;
+
+    //buttons to access each button in the list
+    public enum Key
+    {
+    	Back, Sound, Vibrate, Difficulty, Mode, Instructions, Facebook, Twitter
+    }
     
-    //buttons to access each button list
-    public static final int INDEX_BUTTON_BACK = 0;
-    public static final int INDEX_BUTTON_SOUND = 1;
-    public static final int INDEX_BUTTON_MODE = 2;
-    public static final int INDEX_BUTTON_DIFFICULTY = 3;
-    public static final int INDEX_BUTTON_INSTRUCTIONS = 4;
-    public static final int INDEX_BUTTON_FACEBOOK = 5;
-    public static final int INDEX_BUTTON_TWITTER = 6;
+    /**
+     * The value when the sound is enabled
+     */
+    public static final int SOUND_ENABLED = 0;
+    
+    /**
+     * The value when the sound is disabled
+     */
+    public static final int SOUND_DISABLED = 1;
+    
+    /**
+     * Free Mode
+     */
+    public static final int MODE_FREE = 0;
+    
+    /**
+     * View Cpu Mode
+     */
+    public static final int MODE_VIEW_CPU = 1;
+    
+    /**
+     * Vs Cpu Mode
+     */
+    public static final int MODE_VS_CPU = 2;
+    
+    /**
+     * Challenge mode 
+     */
+    public static final int MODE_CHALLENGE = 3;
     
     public OptionsScreen(final ScreenManager screen)
     {
@@ -52,7 +80,7 @@ public class OptionsScreen implements Screen, Disposable
         this.logo = Images.getImage(Assets.ImageMenuKey.Logo);
 
         //create buttons hash map
-        this.buttons = new SparseArray<Button>();
+        this.buttons = new HashMap<Key, Button>();
 
         //store our screen reference
         this.screen = screen;
@@ -70,6 +98,10 @@ public class OptionsScreen implements Screen, Disposable
         //add sound option
         addButtonSound(x, y);
         
+        //add vibrate option
+        y += ScreenManager.BUTTON_Y_INCREMENT;
+        addButtonVibrate(x, y);
+        
         //add mode option
         y += ScreenManager.BUTTON_Y_INCREMENT;
         addButtonMode(x, y);
@@ -82,17 +114,30 @@ public class OptionsScreen implements Screen, Disposable
         y += ScreenManager.BUTTON_Y_INCREMENT;
         addButtonBack(x, y);
         
-        //setup each button
-        for (int index = 0; index < buttons.size(); index++)
-        {
-        	buttons.get(index).setWidth(MenuScreen.BUTTON_WIDTH);
-        	buttons.get(index).setHeight(MenuScreen.BUTTON_HEIGHT);
-        	buttons.get(index).updateBounds();
-        	buttons.get(index).positionText(paint);
-        }
-        
-        //add social media icons after the above, because the dimensions are different
+        //add social media icons finally
         addIcons();
+        
+        //setup each button dimensions and boundary
+        for (Key key : Key.values())
+        {
+        	switch (key)
+        	{
+	        	case Twitter:
+	        	case Facebook:
+	        	case Instructions:
+	        		buttons.get(key).setWidth(MenuScreen.ICON_DIMENSION);
+	        		buttons.get(key).setHeight(MenuScreen.ICON_DIMENSION);
+                	buttons.get(key).updateBounds();
+	        		break;
+        		
+        		default:
+                	buttons.get(key).setWidth(MenuScreen.BUTTON_WIDTH);
+                	buttons.get(key).setHeight(MenuScreen.BUTTON_HEIGHT);
+                	buttons.get(key).updateBounds();
+                	buttons.get(key).positionText(paint);
+                	break;
+        	}
+        }
         
         //create our settings object last, which will load the previous settings
         this.settings = new Settings(this, screen.getPanel().getActivity());
@@ -103,7 +148,7 @@ public class OptionsScreen implements Screen, Disposable
      * We typically use this list to help load/set the settings based on the index of each button.
      * @return The list of buttons on the options screen
      */
-    public SparseArray<Button> getButtons()
+    public HashMap<Key, Button> getButtons()
     {
     	return this.buttons;
     }
@@ -116,67 +161,69 @@ public class OptionsScreen implements Screen, Disposable
         Button tmp = new Button(Images.getImage(Assets.ImageMenuKey.Instructions));
         tmp.setX(GamePanel.WIDTH - (MenuScreen.ICON_DIMENSION * 4.5));
         tmp.setY(GamePanel.HEIGHT - (MenuScreen.ICON_DIMENSION * 1.25));
-    	tmp.setWidth(MenuScreen.ICON_DIMENSION);
-    	tmp.setHeight(MenuScreen.ICON_DIMENSION);
-    	tmp.updateBounds();
-        this.buttons.put(INDEX_BUTTON_INSTRUCTIONS, tmp);
+        this.buttons.put(Key.Instructions, tmp);
         
         tmp = new Button(Images.getImage(Assets.ImageMenuKey.Facebook));
         tmp.setX(GamePanel.WIDTH - (MenuScreen.ICON_DIMENSION * 3));
         tmp.setY(GamePanel.HEIGHT - (MenuScreen.ICON_DIMENSION * 1.25));
-    	tmp.setWidth(MenuScreen.ICON_DIMENSION);
-    	tmp.setHeight(MenuScreen.ICON_DIMENSION);
-    	tmp.updateBounds();
-        this.buttons.put(INDEX_BUTTON_FACEBOOK, tmp);
+        this.buttons.put(Key.Facebook, tmp);
         
         tmp = new Button(Images.getImage(Assets.ImageMenuKey.Twitter));
         tmp.setX(GamePanel.WIDTH - (MenuScreen.ICON_DIMENSION * 1.5));
         tmp.setY(GamePanel.HEIGHT - (MenuScreen.ICON_DIMENSION * 1.25));
-    	tmp.setWidth(MenuScreen.ICON_DIMENSION);
-    	tmp.setHeight(MenuScreen.ICON_DIMENSION);
-    	tmp.updateBounds();
-        this.buttons.put(INDEX_BUTTON_TWITTER, tmp);
+        this.buttons.put(Key.Twitter, tmp);
     }
     
     private void addButtonMode(final int x, final int y)
     {
         Button button = new Button(Images.getImage(Assets.ImageMenuKey.Button));
-        button.addDescription("Mode: Human");
-        button.addDescription("Mode: Cpu");
-        button.addDescription("Mode: vs Cpu");
+        button.addDescription("Mode - Free");
+        button.addDescription("Mode - View Cpu");
+        button.addDescription("Mode - vs Cpu");
+        button.addDescription("Mode - Challenge");
         button.setX(x);
         button.setY(y);
-        this.buttons.put(INDEX_BUTTON_MODE, button);
+        this.buttons.put(Key.Mode, button);
     }
     
     private void addButtonDifficulty(final int x, final int y)
     {
         Button button = new Button(Images.getImage(Assets.ImageMenuKey.Button));
-        button.addDescription("Skill: Easy");
-        button.addDescription("Skill: Normal");
-        button.addDescription("Skill: Hard");
+        button.addDescription("Skill - Easy");
+        button.addDescription("Skill - Normal");
+        button.addDescription("Skill - Hard");
         button.setX(x);
         button.setY(y);
-        this.buttons.put(INDEX_BUTTON_DIFFICULTY, button);
+        this.buttons.put(Key.Difficulty, button);
     }
     
     private void addButtonBack(final int x, final int y)
     {
         Button button = new Button(Images.getImage(Assets.ImageMenuKey.Button));
-        button.addDescription("Go  Back");
+        button.addDescription("Back");
         button.setX(x);
         button.setY(y);
-        this.buttons.put(INDEX_BUTTON_BACK, button);
+        this.buttons.put(Key.Back, button);
     }
     
     private void addButtonSound(final int x, final int y)
     {
         Button button = new Button(Images.getImage(Assets.ImageMenuKey.Button));
-        button.addDescription("Sound: Enabled");
-        button.addDescription("Sound: Disabled");
+        button.addDescription("Sound - On");
+        button.addDescription("Sound - Off");
         button.setX(x);
         button.setY(y);
-        this.buttons.put(INDEX_BUTTON_SOUND, button);
+        this.buttons.put(Key.Sound, button);
+    }
+    
+    private void addButtonVibrate(final int x, final int y)
+    {
+        Button button = new Button(Images.getImage(Assets.ImageMenuKey.Button));
+        button.addDescription("Vibrate - On");
+        button.addDescription("Vibrate - Off");
+        button.setX(x);
+        button.setY(y);
+    	this.buttons.put(Key.Vibrate, button);
     }
     
     /**
@@ -184,7 +231,7 @@ public class OptionsScreen implements Screen, Disposable
      * @param key The key of the button we want to change
      * @param index The desired index
      */
-    public void setIndex(final int key, final int index)
+    public void setIndex(final Key key, final int index)
     {
     	buttons.get(key).setIndex(index);
     }
@@ -194,7 +241,7 @@ public class OptionsScreen implements Screen, Disposable
      * @param key The key of the button we want to check
      * @return The current selection for the specified button key
      */
-    public int getIndex(final int key)
+    public int getIndex(final Key key)
     {
     	return buttons.get(key).getIndex();
     }
@@ -207,7 +254,7 @@ public class OptionsScreen implements Screen, Disposable
     {
         if (buttons != null)
         {
-        	for (int key = 0; key < buttons.size(); key++)
+        	for (Key key : Key.values())
         	{
         		//get the current button
         		Button button = buttons.get(key);
@@ -216,17 +263,18 @@ public class OptionsScreen implements Screen, Disposable
         		{
 	        		switch (key)
 	        		{
-						case INDEX_BUTTON_BACK:
-						case INDEX_BUTTON_SOUND:
-						case INDEX_BUTTON_DIFFICULTY:
-						case INDEX_BUTTON_MODE:
+						case Back:
+						case Sound:
+						case Difficulty:
+						case Mode:
+						case Vibrate:
 							button.positionText(paint);
 							break;
 							
 						//do nothing for these
-						case INDEX_BUTTON_INSTRUCTIONS:
-						case INDEX_BUTTON_FACEBOOK:
-						case INDEX_BUTTON_TWITTER:
+						case Instructions:
+						case Facebook:
+						case Twitter:
 							break;
 							
 						default:
@@ -242,15 +290,15 @@ public class OptionsScreen implements Screen, Disposable
     }
     
     @Override
-    public boolean update(final MotionEvent event, final float x, final float y) throws Exception
+    public boolean update(final int action, final float x, final float y) throws Exception
     {
     	//we only want motion event up
-    	if (event.getAction() != MotionEvent.ACTION_UP)
+    	if (action != MotionEvent.ACTION_UP)
     		return true;
     	
         if (buttons != null)
         {
-        	for (int key = 0; key < buttons.size(); key++)
+        	for (Key key : Key.values())
         	{
         		//get the current button
         		Button button = buttons.get(key);
@@ -266,7 +314,7 @@ public class OptionsScreen implements Screen, Disposable
 				//determine which button
 				switch (key)
 				{
-    				case INDEX_BUTTON_BACK:
+    				case Back:
     					
     					//change index
     					button.setIndex(button.getIndex() + 1);
@@ -283,7 +331,7 @@ public class OptionsScreen implements Screen, Disposable
     	                //no need to continue
     	                return false;
     	                
-    				case INDEX_BUTTON_SOUND:
+    				case Sound:
     	    			
     					//change index
     					button.setIndex(button.getIndex() + 1);
@@ -308,8 +356,9 @@ public class OptionsScreen implements Screen, Disposable
                         //exit loop
                         return false;
                         
-					case INDEX_BUTTON_DIFFICULTY:
-					case INDEX_BUTTON_MODE:
+					case Difficulty:
+					case Mode:
+					case Vibrate:
     					
     					//change index
     					button.setIndex(button.getIndex() + 1);
@@ -321,7 +370,7 @@ public class OptionsScreen implements Screen, Disposable
                         Audio.play(Assets.AudioMenuKey.Selection);
     					return false;
                         
-    				case INDEX_BUTTON_INSTRUCTIONS:
+    				case Instructions:
     					
     	                //play sound effect
     	                Audio.play(Assets.AudioMenuKey.Selection);
@@ -332,7 +381,7 @@ public class OptionsScreen implements Screen, Disposable
     	                //we do not request any additional events
     	                return false;
     					
-    				case INDEX_BUTTON_FACEBOOK:
+    				case Facebook:
     					
     	                //play sound effect
     	                Audio.play(Assets.AudioMenuKey.Selection);
@@ -343,7 +392,7 @@ public class OptionsScreen implements Screen, Disposable
     	                //we do not request any additional events
     	                return false;
     					
-    				case INDEX_BUTTON_TWITTER:
+    				case Twitter:
     					
     	                //play sound effect
     	                Audio.play(Assets.AudioMenuKey.Selection);
@@ -377,27 +426,28 @@ public class OptionsScreen implements Screen, Disposable
         canvas.drawBitmap(logo, ScreenManager.LOGO_X, ScreenManager.LOGO_Y, null);
         
         //draw the menu buttons
-    	for (int index = 0; index < buttons.size(); index++)
+    	for (Key key : Key.values())
     	{
-    		if (buttons.get(index) != null)
+    		if (buttons.get(key) != null)
     		{
-    			switch (index)
+    			switch (key)
     			{
-	    			case INDEX_BUTTON_BACK:
-	    			case INDEX_BUTTON_SOUND:
-	    			case INDEX_BUTTON_MODE:
-	    			case INDEX_BUTTON_DIFFICULTY:
-	    				buttons.get(index).render(canvas, paint);
+	    			case Back:
+	    			case Sound:
+	    			case Mode:
+					case Vibrate:
+	    			case Difficulty:
+	    				buttons.get(key).render(canvas, paint);
 	    				break;
 	    				
-	    			case INDEX_BUTTON_INSTRUCTIONS:
-	    			case INDEX_BUTTON_FACEBOOK:
-	    			case INDEX_BUTTON_TWITTER:
-	    				buttons.get(index).render(canvas);
+	    			case Instructions:
+	    			case Facebook:
+	    			case Twitter:
+	    				buttons.get(key).render(canvas);
 	    				break;
 	    				
 	    			default:
-	    				throw new Exception("Button with index not setup here: " + index);
+	    				throw new Exception("Button with key not setup here: " + key);
     			}
     		}
     			
@@ -418,12 +468,12 @@ public class OptionsScreen implements Screen, Disposable
         
         if (buttons != null)
         {
-        	for (int i = 0; i < buttons.size(); i++)
+        	for (Key key :Key.values())
         	{
-        		if (buttons.get(i) != null)
+        		if (buttons.get(key) != null)
         		{
-        			buttons.get(i).dispose();
-        			buttons.put(i, null);
+        			buttons.get(key).dispose();
+        			buttons.put(key, null);
         		}
         	}
         	

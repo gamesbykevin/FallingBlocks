@@ -1,8 +1,6 @@
 package com.gamesbykevin.fallingblocks.game.controller;
 
 import android.graphics.Canvas;
-import android.view.MotionEvent;
-
 import com.gamesbykevin.androidframework.resources.Disposable;
 
 /**
@@ -14,7 +12,7 @@ public interface IController extends Disposable
 	/**
 	 * Logic to reset
 	 */
-	public void reset();
+	public void reset() throws Exception;
 	
     /**
      * Update logic when motion event occurs
@@ -22,7 +20,7 @@ public interface IController extends Disposable
      * @param x x-coordinate
      * @param y y-coordinate
      */
-    public void update(final MotionEvent event, final float x, final float y);
+    public void update(final int action, final float x, final float y) throws Exception;
     
     /**
      * Render our controller

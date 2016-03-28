@@ -1,17 +1,20 @@
 package com.gamesbykevin.fallingblocks.game;
 
-import android.view.MotionEvent;
+import android.content.Context;
 import android.graphics.Canvas;
+import android.os.Vibrator;
+import android.view.MotionEvent;
 
+import com.gamesbykevin.androidframework.level.Select;
 import com.gamesbykevin.androidframework.resources.Audio;
-
 import com.gamesbykevin.fallingblocks.assets.Assets;
-import com.gamesbykevin.fallingblocks.board.Board;
 import com.gamesbykevin.fallingblocks.game.controller.Controller;
-
 import com.gamesbykevin.fallingblocks.player.*;
 import com.gamesbykevin.fallingblocks.screen.OptionsScreen;
+import com.gamesbykevin.fallingblocks.storage.score.*;
+import com.gamesbykevin.fallingblocks.thread.MainThread;
 import com.gamesbykevin.fallingblocks.screen.ScreenManager;
+import com.gamesbykevin.fallingblocks.screen.OptionsScreen.Key;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -31,23 +34,14 @@ public class Game implements IGame
     //the controller for our game
     private Controller controller;
     
-    /**
-     * The amount of health damage to apply to opponent
-     */
-    private static final int VS_MODE_DAMAGE = -3;
+    //our level select object
+    private Select select;
     
-    /**
-     * The amount of health to replenish to the player
-     */
-    private static final int VS_MODE_HEAL = 1;
+    //the score card object
+    private ScoreCard scorecard;
     
-    //the ratio to determine the piece fall speed
-    private static final float DIFFICULTY_RATIO_EASY = 1.0f;
-    private static final float DIFFICULTY_RATIO_NORMAL = 0.5f;
-    private static final float DIFFICULTY_RATIO_HARD = 0.25f;
-    
-    //the cpu pieces will fall faster
-    private static final float DIFFICULTY_CPU_EXTRA = 0.5f;
+    //the duration we want to vibrate the phone for
+    private static final long VIBRATION_DURATION = 200L;
     
     public Game(final ScreenManager screen) throws Exception
     {
@@ -59,6 +53,36 @@ public class Game implements IGame
         
         //create a our list of players
         this.players = new ArrayList<Player>();
+        
+        //create our level select object
+        this.select = new Select();
+        
+        //create the level select screen
+        this.select = new Select();
+        
+        //create score card object reference
+        this.scorecard = new ScoreCard(this, screen.getPanel().getActivity(), MainThread.DEBUG);
+        
+        //setup the level select object
+        GameHelper.setupLevelSelect(this);
+    }
+    
+    /**
+     * The the score card
+     * @return Our score card object reference for tracking best score etc...
+     */
+    public ScoreCard getScorecard()
+    {
+    	return this.scorecard;
+    }
+    
+    /**
+     * Get the level select
+     * @return The level select object
+     */
+    public Select getLevelSelect()
+    {
+    	return this.select;
     }
     
     /**
@@ -79,72 +103,26 @@ public class Game implements IGame
         return this.players;
     }
     
+    /**
+     * Get the human player
+     * @return The human player, if not found null is returned
+     */
+    public Player getHuman()
+    {
+    	for (Player player : getPlayers())
+    	{
+    		if (player.isHuman())
+    			return player;
+    	}
+    	
+    	//no human players were found
+    	return null;
+    }
+    
     @Override
     public void reset() throws Exception
     {
-    	//clear our players list
-    	this.players.clear();
-        
-        switch (screen.getScreenOptions().getIndex(OptionsScreen.INDEX_BUTTON_MODE))
-        {
-        	//single player human
-	        case 0:
-	        	this.players.add(new Human(false));
-	        	break;
-	        
-	        //single player cpu
-	        case 1:
-	        	this.players.add(new Cpu(false));
-	        	break;
-	        	
-	        //2 player versus cpu
-	        case 2:
-                this.players.add(new Human(true));
-                this.players.add(new Cpu(true));
-	        	break;
-        }
-        
-        //determine the piece drop rate
-        for (Player player : getPlayers())
-        {
-        	switch (screen.getScreenOptions().getIndex(OptionsScreen.INDEX_BUTTON_DIFFICULTY))
-        	{
-	        	//easy
-	        	case 0:
-	        		player.setDropDelay((long)(Board.COMPLETED_LINE_DELAY * DIFFICULTY_RATIO_EASY));
-	        		break;
-	        		
-	        	//normal
-	        	case 1:
-	        		player.setDropDelay((long)(Board.COMPLETED_LINE_DELAY * DIFFICULTY_RATIO_NORMAL));
-	        		break;
-	        		
-	        	//hard
-	        	case 2:
-	        		player.setDropDelay((long)(Board.COMPLETED_LINE_DELAY * DIFFICULTY_RATIO_HARD));
-	        		break;
-        	}
-        	
-            //the cpu pieces will fall slightly faster to make the challenge more competitive
-            if (!player.isHuman())
-                player.setDropDelay((int)(player.getDropDelay() * DIFFICULTY_CPU_EXTRA));
-        }
-        
-        if (getPlayers() != null)
-        {
-            for (Player player : getPlayers())
-            {
-                if (player != null)
-                    player.reset();
-            }
-            
-            //make sure no existing audio
-            Audio.stop();
-        }
-        
-        //reset the controller
-        if (getController() != null)
-        	getController().reset();
+    	GameHelper.reset(this);
     }
     
     /**
@@ -152,37 +130,26 @@ public class Game implements IGame
      */
     public void resumeMusic()
     {
-        //play song
-        Audio.play(
-        	getPlayers().size() > 1 ? Assets.AudioGameKey.MusicVs : Assets.AudioGameKey.MusicSingle, 
-        	true
-        );
+    	switch (getScreen().getScreenOptions().getIndex(Key.Mode))
+    	{
+	    	case OptionsScreen.MODE_FREE:
+	    	case OptionsScreen.MODE_VIEW_CPU:
+	    		Audio.play(Assets.AudioGameKey.MusicSingle, true);
+	    		break;
+	    		
+	    	case OptionsScreen.MODE_VS_CPU:
+	    		Audio.play(Assets.AudioGameKey.MusicVs, true);
+	    		break;
+	    		
+	    	case OptionsScreen.MODE_CHALLENGE:
+	    		Audio.play(Assets.AudioGameKey.MusicChallenge, true);
+	    		break;
+    	}
     }
     
     /**
-     * Get our opponent
-     * @param player The current player searching for an opponent
-     * @return The player who does not have a matching id, indicating it is the other player (opponent)
-     */
-    public Player getOpponent(final Player player)
-    {
-        for (Player opponent : getPlayers())
-        {
-            //if the id's match it is the same player, skip
-            if (player.hasId(opponent.getId()))
-                continue;
-            
-            //the id's do not match, we found our opponent
-            return opponent;
-        }
-        
-        //this should not happen
-        return null;
-    }
-    
-    /**
-     * 
-     * @return 
+     * Get the controller that the human player will control
+     * @return The controller object reference
      */
     public Controller getController()
     {
@@ -195,9 +162,24 @@ public class Game implements IGame
      * @param x (x-coordinate)
      * @param y (y-coordinate)
      */
-    public void update(final MotionEvent event, final float x, final float y)
+    @Override
+    public void update(final int action, final float x, final float y) throws Exception
     {
-        getController().update(event, x, y);
+    	//if we don't have a selection
+    	if (!getLevelSelect().hasSelection())
+    	{
+    		//if action up, check the location
+    		if (action == MotionEvent.ACTION_UP)
+    			getLevelSelect().setCheck((int)x, (int)y);
+    		
+    		//don't continue
+    		return;
+    	}
+    	else
+    	{
+    		//we can now update the controller
+    		getController().update(action, x, y);
+    	}
     }
     
     /**
@@ -206,77 +188,23 @@ public class Game implements IGame
      */
     public void update() throws Exception
     {
-        for (Player player : getPlayers())
-        {
-            if (player != null)
-            {
-                //if the player has game over
-                if (player.getBoard().hasGameover())
-                {
-                    //set the state to game over
-                    screen.setState(ScreenManager.State.GameOver);
-                    
-                    //default message
-                    screen.getScreenGameover().setMessage("Game Over");
-                    
-                    //if there is more than 1 player
-                    if (getPlayers().size() > 1)
-                    {
-                        if (player.isHuman())
-                        {
-                            //set message
-                            screen.getScreenGameover().setMessage("Game Over, You Lose");
-
-                            //play song
-                            Audio.play(Assets.AudioGameKey.GameoverLose);
-                        }
-                        else
-                        {
-                            //set message
-                            screen.getScreenGameover().setMessage("Game Over, You Win");
-                            
-                            //play song
-                            Audio.play(Assets.AudioGameKey.GameoverWin);
-                        }
-                    }
-                    else
-                    {
-                        //play song
-                        Audio.play(Assets.AudioGameKey.GameoverLose);
-                    }
-                    
-                    break;
-                }
-                
-                //store the number of lines the player has completed
-                final int lines = player.getStats().getLines();
-                
-                //update the player
-                player.update();
-                
-                //if the player has completed at least 1 line, update
-                if (lines != player.getStats().getLines())
-                {
-                    //get the opponent
-                    final Player opponent = getOpponent(player);
-                    
-                    //if the opponent exists
-                    if (opponent != null)
-                    {
-                        //find the number of lines completed
-                        final int difference = player.getStats().getLines() - lines;
-                        
-                        //calculate the total heal/damage
-                        final int damage = difference * VS_MODE_DAMAGE;
-                        final int heal = difference * VS_MODE_HEAL;
-                        
-                        //update the players
-                        player.getStats().setHealth(player.getStats().getHealth() + heal);
-                        opponent.getStats().setHealth(opponent.getStats().getHealth() + damage);
-                    }
-                }
-            }
-        }
+    	GameHelper.update(this);
+    }
+    
+    /**
+     * Vibrate the phone if the setting is enabled
+     */
+    public void vibrate()
+    {
+		//make sure vibrate option is enabled
+		if (getScreen().getScreenOptions().getIndex(OptionsScreen.Key.Vibrate) == 0)
+		{
+    		//get our vibrate object
+    		Vibrator v = (Vibrator) getScreen().getPanel().getActivity().getSystemService(Context.VIBRATOR_SERVICE);
+    		 
+			//vibrate for a specified amount of milliseconds
+			v.vibrate(VIBRATION_DURATION);
+		}
     }
     
     @Override
@@ -302,6 +230,18 @@ public class Game implements IGame
             controller.dispose();
             controller = null;
         }
+        
+        if (select != null)
+        {
+        	select.dispose();
+        	select = null;
+        }
+        
+        if (scorecard != null)
+        {
+        	scorecard.dispose();
+        	scorecard = null;
+        }
     }
     
     /**
@@ -311,18 +251,25 @@ public class Game implements IGame
      */
     public void render(final Canvas canvas) throws Exception
     {
-        //draw the player, etc....
-        if (getPlayers() != null)
-        {
-            for (Player player : getPlayers())
-            {
-                if (player != null)
-                    player.render(canvas);
-            }
-        }
-        
-        //draw the game controller
-        if (getController() != null)
-            getController().render(canvas);
+    	if (!getLevelSelect().hasSelection())
+    	{
+    		getLevelSelect().render(canvas, getScreen().getPaint());
+    	}
+    	else
+    	{
+	        //draw the player, etc....
+	        if (getPlayers() != null)
+	        {
+	            for (Player player : getPlayers())
+	            {
+	                if (player != null)
+	                    player.render(canvas);
+	            }
+	        }
+	        
+	        //draw the game controller
+	        if (getController() != null)
+	            getController().render(canvas);
+    	}
     }
 }

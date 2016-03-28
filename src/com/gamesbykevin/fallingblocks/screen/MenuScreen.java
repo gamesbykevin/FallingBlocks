@@ -33,17 +33,17 @@ public class MenuScreen implements Screen, Disposable
     /**
      * Button text to display to exit the game
      */
-    public static final String BUTTON_TEXT_EXIT_GAME = "Exit Game";
+    public static final String BUTTON_TEXT_EXIT_GAME = "Exit";
     
     /**
      * Button text to display to rate the game
      */
-    public static final String BUTTON_TEXT_RATE_APP = "Rate App";
+    public static final String BUTTON_TEXT_RATE_APP = "Rate";
     
     /**
      * Button text to display to start a new game
      */
-    public static final String BUTTON_TEXT_START_GAME = "Start Game";
+    public static final String BUTTON_TEXT_START_GAME = "Start";
     
     /**
      * Button text to display for the options
@@ -53,7 +53,7 @@ public class MenuScreen implements Screen, Disposable
     /**
      * Button text to display for more games
      */
-    public static final String BUTTON_TEXT_MORE_GAMES = "More Games";
+    public static final String BUTTON_TEXT_MORE_GAMES = "More";
     
     private enum Key
     {
@@ -66,17 +66,17 @@ public class MenuScreen implements Screen, Disposable
     /**
      * Dimension of the standard menu button
      */
-    public static final int BUTTON_WIDTH = 500;
+    public static final int BUTTON_WIDTH = 250;
     
     /**
      * Dimension of the standard menu button
      */
-    public static final int BUTTON_HEIGHT = 128;
+    public static final int BUTTON_HEIGHT = 64;
     
     /**
      * The size of our icon buttons
      */
-    public static final int ICON_DIMENSION = 128;
+    public static final int ICON_DIMENSION = 64;
     
     public MenuScreen(final ScreenManager screen)
     {
@@ -188,13 +188,13 @@ public class MenuScreen implements Screen, Disposable
     }
     
     @Override
-    public boolean update(final MotionEvent event, final float x, final float y) throws Exception
+    public boolean update(final int action, final float x, final float y) throws Exception
     {
         //if the game is to reset, don't continue
         if (reset)
             return false;
         
-        if (event.getAction() == MotionEvent.ACTION_UP)
+        if (action == MotionEvent.ACTION_UP)
         {
         	//check every button
         	for (Key key : Key.values())

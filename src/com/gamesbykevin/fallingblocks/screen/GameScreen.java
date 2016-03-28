@@ -1,7 +1,6 @@
 package com.gamesbykevin.fallingblocks.screen;
 
 import android.graphics.Canvas;
-import android.view.MotionEvent;
 import com.gamesbykevin.androidframework.resources.Disposable;
 import com.gamesbykevin.androidframework.screen.Screen;
 import com.gamesbykevin.fallingblocks.game.Game;
@@ -37,6 +36,9 @@ public class GameScreen implements Screen, Disposable
         if (getGame() == null)
             this.game = new Game(screen);
         
+        //flag level selection as false
+        getGame().getLevelSelect().setSelection(false);
+        
         //reset the game
         getGame().reset();
     }
@@ -51,10 +53,10 @@ public class GameScreen implements Screen, Disposable
     }
     
     @Override
-    public boolean update(final MotionEvent event, final float x, final float y) throws Exception
+    public boolean update(final int action, final float x, final float y) throws Exception
     {
         if (getGame() != null)
-            getGame().update(event, x, y);
+            getGame().update(action, x, y);
         
         return true;
     }

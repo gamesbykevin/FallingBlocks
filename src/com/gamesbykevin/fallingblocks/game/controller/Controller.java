@@ -11,7 +11,16 @@ import com.gamesbykevin.androidframework.resources.Images;
 import com.gamesbykevin.fallingblocks.assets.Assets;
 import com.gamesbykevin.fallingblocks.game.Game;
 import com.gamesbykevin.fallingblocks.player.Player;
-import com.gamesbykevin.fallingblocks.screen.OptionsScreen;
+
+import static com.gamesbykevin.fallingblocks.screen.OptionsScreen.SOUND_ENABLED;
+import static com.gamesbykevin.fallingblocks.screen.OptionsScreen.SOUND_DISABLED;
+
+import com.gamesbykevin.fallingblocks.screen.OptionsScreen.Key;
+import static com.gamesbykevin.fallingblocks.screen.OptionsScreen.MODE_FREE;
+import static com.gamesbykevin.fallingblocks.screen.OptionsScreen.MODE_VIEW_CPU;
+import static com.gamesbykevin.fallingblocks.screen.OptionsScreen.MODE_VS_CPU;
+import static com.gamesbykevin.fallingblocks.screen.OptionsScreen.MODE_CHALLENGE;
+
 import com.gamesbykevin.fallingblocks.screen.ScreenManager;
 
 import java.util.HashMap;
@@ -31,33 +40,33 @@ public class Controller implements IController
     /**
      * The starting location of our sound/pause/exit icons
      */
-    private static final int MULTI_ICON_START_X = 50;
-    private static final int MULTI_ICON_START_Y = 75;
+    private static final int MULTI_ICON_START_X = 25;
+    private static final int MULTI_ICON_START_Y = 37;
     
     /**
      * The starting location of our sound/pause/exit icons
      */
-    private static final int SINGLE_ICON_START_X = 705;
-    private static final int SINGLE_ICON_START_Y = 400;
+    private static final int SINGLE_ICON_START_X = 352;
+    private static final int SINGLE_ICON_START_Y = 200;
     
-    private static final int CONTROLLER_START_X = 25;
-    private static final int CONTROLLER_START_Y = 1350;
+    private static final int CONTROLLER_START_X = 12;
+    private static final int CONTROLLER_START_Y = 675;
     
     /**
      * Default size of the icon
      */
-    private static final int ICON_DIMENSION = 150;
+    private static final int ICON_DIMENSION = 75;
 
-    private static final int BUTTON_HORIZONTAL_WIDTH = 175;
-    private static final int BUTTON_HORIZONTAL_HEIGHT = 140;
-    private static final int BUTTON_CIRCLE_WIDTH = 160;
-    private static final int BUTTON_CIRCLE_HEIGHT = 160;
+    private static final int BUTTON_HORIZONTAL_WIDTH = 87;
+    private static final int BUTTON_HORIZONTAL_HEIGHT = 70;
+    private static final int BUTTON_CIRCLE_WIDTH = 80;
+    private static final int BUTTON_CIRCLE_HEIGHT = 80;
     
     /**
      * Default Constructor
      * @param game Object game object reference
      */
-    public Controller(final Game game)
+    public Controller(final Game game) throws Exception
     {
         //assign object reference
         this.game = game;
@@ -95,10 +104,10 @@ public class Controller implements IController
      * @param y (y-coordinate)
      */
     @Override
-    public void update(final MotionEvent event, final float x, final float y)
+    public void update(final int action, final float x, final float y) throws Exception
     {
         //check if the touch screen was released
-        if (event.getAction() == MotionEvent.ACTION_UP)
+        if (action == MotionEvent.ACTION_UP)
         {
             //check if the player hit the pause
             if (buttons.get(Assets.ImageGameKey.Pause).contains(x, y))
@@ -141,7 +150,7 @@ public class Controller implements IController
                 }
 
                 //make sure the options screen is updated
-                getGame().getScreen().getScreenOptions().setIndex(OptionsScreen.INDEX_BUTTON_SOUND, Audio.isAudioEnabled() ? 0 : 1);
+                getGame().getScreen().getScreenOptions().setIndex(Key.Sound, Audio.isAudioEnabled() ? SOUND_ENABLED : SOUND_DISABLED);
                 
                 //no need to continue
                 return;
@@ -155,13 +164,13 @@ public class Controller implements IController
                 continue;
             
             //check if the touch screen is pressed down
-            if (event.getAction() == MotionEvent.ACTION_DOWN)
+            if (action == MotionEvent.ACTION_DOWN)
             {
                 //if the player is pressing down, make the time expire to drop the piece
                 if (buttons.get(Assets.ImageGameKey.Fall).isVisible() && buttons.get(Assets.ImageGameKey.Fall).contains(x, y))
                     player.setAction(Player.Action.MOVE_DOWN);
             }
-            else if (event.getAction() == MotionEvent.ACTION_MOVE)
+            else if (action == MotionEvent.ACTION_MOVE)
             {
             	//if we move off the down button remove it
                 if (!buttons.get(Assets.ImageGameKey.Fall).contains(x, y))
@@ -170,7 +179,7 @@ public class Controller implements IController
                     player.setAction(null);
                 }
             }
-            else if (event.getAction() == MotionEvent.ACTION_UP)
+            else if (action == MotionEvent.ACTION_UP)
             {
                 //if the up control was released, we will rotate the piece
                 if (buttons.get(Assets.ImageGameKey.Rotate).isVisible() && buttons.get(Assets.ImageGameKey.Rotate).contains(x, y))
@@ -201,7 +210,7 @@ public class Controller implements IController
     }
     
     @Override
-    public void reset()
+    public void reset() throws Exception
     {
     	if (buttons != null)
     	{
@@ -213,16 +222,16 @@ public class Controller implements IController
     	int x = 0, y = 0;
     	
     	//get the mode index
-    	final int modeIndex = game.getScreen().getScreenOptions().getIndex(OptionsScreen.INDEX_BUTTON_MODE); 
-    	
-    	//is the cpu playing by itself
-    	boolean cpuOnly = (modeIndex == 1);
+    	final int modeIndex = game.getScreen().getScreenOptions().getIndex(Key.Mode); 
 
-    	switch (game.getScreen().getScreenOptions().getIndex(OptionsScreen.INDEX_BUTTON_MODE))
+    	//setup the buttons depending on the game mode
+    	switch (modeIndex)
     	{
 	    	//single player
-	    	case 0:
-	    	case 1:
+	    	case MODE_FREE:
+	    	case MODE_VIEW_CPU:
+	    	case MODE_CHALLENGE:
+	    		
 	        	//set start
 	        	x = SINGLE_ICON_START_X;
 	        	y = SINGLE_ICON_START_Y;
@@ -244,9 +253,8 @@ public class Controller implements IController
 	            this.buttons.get(Assets.ImageGameKey.Exit).setY(y);
 	    		break;
 	    		
-	    	//multi player
-	    	case 2:
-	    	default:
+	    	//multi-player
+	    	case MODE_VS_CPU:
 	    		
 	        	//set start
 	        	x = MULTI_ICON_START_X;
@@ -268,6 +276,9 @@ public class Controller implements IController
 	            this.buttons.get(Assets.ImageGameKey.Exit).setX(x);
 	            this.buttons.get(Assets.ImageGameKey.Exit).setY(y);
 	    		break;
+	    		
+    		default:
+				throw new Exception("Game mode index not setup here: " + modeIndex);
     	}
         
         //assign the button locations
@@ -304,6 +315,9 @@ public class Controller implements IController
         {
         	button.updateBounds();
         }
+        
+    	//is the cpu playing by itself
+    	boolean cpuOnly = (modeIndex == MODE_VIEW_CPU);
         
         //if only the computer is playing we hide the controller buttons
         this.buttons.get(Assets.ImageGameKey.Left).setVisible(!cpuOnly);

@@ -34,50 +34,68 @@ public final class Stats extends Entity implements IStats
     //text description
     private String description;
     
-    /**
-     * Default dimension of stat window
-     */
-    public static final int WIDTH = 270;
+    //the text stat description
+    private String statDescription;
     
     /**
      * Default dimension of stat window
      */
-    public static final int HEIGHT_NORMAL = 327;
+    public static final int WIDTH = 135;
+    
+    /**
+     * Default dimension of stat window
+     */
+    public static final int HEIGHT_NORMAL = 163;
     
     /**
      * Dimension of stat window to include the health bar
      */
-    public static final int HEIGHT_EXTRA = 350;
+    public static final int HEIGHT_EXTRA = 175;
     
     /**
      * When rendering the next piece it will be inside the stat window and offset the coordinates
      */
-    private static final int PIECE_OFFSET_X = 50;
+    private static final int PIECE_OFFSET_X = 25;
     
     /**
      * When rendering the next piece it will be inside the stat window and offset the coordinates
      */
-    private static final int PIECE_OFFSET_Y = 150;
+    private static final int PIECE_OFFSET_Y = 75;
     
     /**
      * When rendering the health bar it will be inside the stat window
      */
-    private static final int HEALTH_OFFSET_X = 10;
+    private static final int HEALTH_OFFSET_X = 5;
     
     /**
      * When rendering the health bar it will be inside the stat window
      */
-    private static final int HEALTH_OFFSET_Y = 300;
+    private static final int HEALTH_OFFSET_Y = 150;
     
     /**
      * Dimension of the health bar
      */
-    private static final double HEALTH_WIDTH = 250;
+    private static final double HEALTH_WIDTH = 125;
     
     /**
      * Dimension of the health bar
      */
-    private static final double HEALTH_HEIGHT = 40;
+    private static final double HEALTH_HEIGHT = 20;
+    
+    /**
+     * The font size for the stats
+     */
+    public static final float STAT_FONT_SIZE = 24f;
+    
+    /**
+     * Default text
+     */
+    public static final String DEFAULT_STAT_DESCRIPTION = "Lines";
+    
+    /**
+     * Text for challenge game mode
+     */
+    public static final String CHALLENGE_STAT_DESCRIPTION = "Blocks";
     
     //do we extend the size of the window
     private final boolean extendWindow;
@@ -93,6 +111,9 @@ public final class Stats extends Entity implements IStats
         
         //assign the text description
         setDescription(description);
+        
+        //set stat text description
+        setStatDescription(DEFAULT_STAT_DESCRIPTION);
         
         //assign decision
         this.extendWindow = extendWindow;
@@ -140,8 +161,8 @@ public final class Stats extends Entity implements IStats
     }
     
     /**
-     * 
-     * @param description 
+     * Set the text description
+     * @param description The text description
      */
     public final void setDescription(final String description)
     {
@@ -150,11 +171,29 @@ public final class Stats extends Entity implements IStats
     
     /**
      * Get the text description
-     * @return 
+     * @return The text description
      */
     private String getDescription()
     {
         return this.description;
+    }
+    
+    /**
+     * Set the text stat description
+     * @param description The text stat description
+     */
+    public final void setStatDescription(final String statDescription)
+    {
+        this.statDescription = statDescription;
+    }
+    
+    /**
+     * Get the text stat description
+     * @return The text stat description
+     */
+    private String getStatDescription()
+    {
+        return this.statDescription;
     }
     
     /**
@@ -234,19 +273,19 @@ public final class Stats extends Entity implements IStats
         canvas.drawRect(getDestination(), getPaint());
         
         //set font size
-        getPaint().setTextSize(48f);
+        getPaint().setTextSize(STAT_FONT_SIZE);
         
         //draw lines stat
-        canvas.drawText(getDescription(), (int)getX() + 25, (int)getY() + 60, getPaint());
+        canvas.drawText(getDescription(), (int)getX() + 12, (int)getY() + 30, getPaint());
         
         //draw next
-        canvas.drawText("Next", (int)getX() + 25, (int)getY() + 120, getPaint());
+        canvas.drawText("Next", (int)getX() + 12, (int)getY() + 60, getPaint());
         
         //do we render the health bar
         if (this.extendWindow)
         {
             //draw health info
-            canvas.drawText("Health: ", (int)getX() + 25, (int)getY() + 290, getPaint());
+            canvas.drawText("Health: ", (int)getX() + 12, (int)getY() + 145, getPaint());
             
             //determine color by health
             if (getHealth() > 75)
@@ -287,8 +326,8 @@ public final class Stats extends Entity implements IStats
         }
         else
         {
-            //draw lines stat
-            canvas.drawText("Lines: " + getLines(), (int)getX() + 25, (int)getY() + 290, getPaint());
+            //draw stat
+            canvas.drawText(getStatDescription() + ": " + getLines(), (int)getX() + 12, (int)getY() + 145, getPaint());
         }
     }
 }

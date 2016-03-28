@@ -3,8 +3,6 @@ package com.gamesbykevin.fallingblocks.screen;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
-import android.view.MotionEvent;
-
 import com.gamesbykevin.androidframework.anim.Animation;
 import com.gamesbykevin.androidframework.base.Entity;
 import com.gamesbykevin.androidframework.resources.Audio;
@@ -50,22 +48,22 @@ public final class ScreenManager implements Screen, Disposable
     /**
      * The x-coordinate where we want the logo to be displayed
      */
-    public static final int LOGO_X = 104;
+    public static final int LOGO_X = 52;
     
     /**
      * The y-coordinate where we want the logo to be displayed
      */
-    public static final int LOGO_Y = 50;
+    public static final int LOGO_Y = 25;
     
     /**
      * The x-coordinate where we want to start putting the buttons
      */
-    public static final int BUTTON_X = 230;
+    public static final int BUTTON_X = 115;
     
     /**
      * The y-coordinate where we want to start putting the buttons
      */
-    public static final int BUTTON_Y = 300;
+    public static final int BUTTON_Y = 150;
     
     /**
      * The y-coordinate spacing between each button
@@ -75,7 +73,7 @@ public final class ScreenManager implements Screen, Disposable
     /**
      * The y-coordinate spacing between each button
      */
-    public static final int BUTTON_X_INCREMENT = 250;
+    public static final int BUTTON_X_INCREMENT = 125;
     
     /**
      * The alpha visibility to apply when darkening the background
@@ -85,7 +83,7 @@ public final class ScreenManager implements Screen, Disposable
     /**
      * Default font size
      */
-    public static final float DEFAULT_FONT_SIZE = 36f;
+    public static final float DEFAULT_FONT_SIZE = 20f;
     
     /**
      * Create our main screen
@@ -122,9 +120,9 @@ public final class ScreenManager implements Screen, Disposable
     }
     
     @Override
-    public boolean update(final MotionEvent event, final float x, final float y) throws Exception
+    public boolean update(final int action, final float x, final float y) throws Exception
     {
-        return getScreen(getState()).update(event, x, y);
+        return getScreen(getState()).update(action, x, y);
     }
     
     /**
@@ -230,18 +228,22 @@ public final class ScreenManager implements Screen, Disposable
 	            }
 	        }
 	        
-	        //if we are not running
+	        //if we are not running currently
 	        if (getState() != State.Running)
 	        {
 	            //stop sound
 	            Audio.stop();
 	        }
 	        
-	        //if we want to start running the game
+	        //if we want to start the game
 	        if (state == State.Running)
 	        {
 	        	//if the game was previously paused, play music again
-	        	if (getState() == State.Paused || getState() == State.Ready || getState() == State.Exit)
+	        	if (getState() == State.Paused || 
+	        		getState() == State.Exit || 
+	        		getState() == State.GameOver || 
+	        		getState() == State.Ready
+	        	)
 	                getScreenGame().getGame().resumeMusic();
 	        }
     	}
@@ -271,7 +273,8 @@ public final class ScreenManager implements Screen, Disposable
                 case Ready:
                 	
                 	//darken background
-                    darkenBackground(canvas);
+                	if (getScreenGame() != null && getScreenGame().getGame() != null)
+                		darkenBackground(canvas);
                     
                     //draw menu
                     if (getScreen(getState()) != null)
@@ -298,7 +301,8 @@ public final class ScreenManager implements Screen, Disposable
                 case Options:
                 	
                 	//darken background
-                    darkenBackground(canvas);
+                	if (getScreenGame() != null && getScreenGame().getGame() != null)
+                		darkenBackground(canvas);
                     
                     if (getScreen(getState()) != null)
                         getScreen(getState()).render(canvas);

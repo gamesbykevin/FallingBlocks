@@ -36,6 +36,7 @@ public final class Piece extends Cell implements Disposable
      */
     public enum Type
     {
+    	//standard pieces
         PieceOne, 
         PieceTwo,
         PieceThree,
@@ -43,8 +44,31 @@ public final class Piece extends Cell implements Disposable
         PieceFive,
         PieceSix,
         PieceSeven,
-        Cleared
+        
+        //displayed when the player has a cleared line
+        Cleared,
+        
+        //displayed block that the user has to remove in order to beat the level
+        Challenge
         ;
+    }
+    
+    /**
+     * Do we ignore this type?
+     * @param type The type of piece we are checking
+     * @return true if this is a piece type that is not part of the standard pieces, false otherwise
+     */
+    public static final boolean ignoreType(final Type type)
+    {
+    	switch (type)
+    	{
+	    	case Cleared:
+	    	case Challenge:
+	    		return true;
+    		
+    		default:
+    			return false;
+    	}
     }
     
     /**
@@ -141,6 +165,7 @@ public final class Piece extends Cell implements Disposable
                 break;
                 
             case Cleared:
+            case Challenge:
                 throw new Exception("A new piece can't be created of this type.");
                 
             default:
@@ -167,8 +192,8 @@ public final class Piece extends Cell implements Disposable
         //check each type
         for (Type type : Type.values())
         {
-            //this is not a valid piece type, for a new piece
-            if (type == Type.Cleared)
+            //skip if this is not a valid piece type
+            if (ignoreType(type))
                 continue;
             
             //add to list

@@ -27,8 +27,8 @@ public class GamePanel extends SurfaceView implements SurfaceHolder.Callback, Di
     public static Random RANDOM = new Random(System.nanoTime());
     
     //default dimensions of window for this game
-    public static final int WIDTH = 960;
-    public static final int HEIGHT = 1600;
+    public static final int WIDTH = 480;
+    public static final int HEIGHT = 800;
     
     //the reference to our activity
     private final MainActivity activity;
@@ -187,7 +187,7 @@ public class GamePanel extends SurfaceView implements SurfaceHolder.Callback, Di
                 }
                 
                 //update the screen/game etc.. with the specified motion events
-                return getScreen().update(event, x, y);
+                return getScreen().update(event.getActionMasked(), x, y);
             }
         }
         catch (Exception e)

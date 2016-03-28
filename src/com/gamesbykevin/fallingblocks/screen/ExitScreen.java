@@ -42,7 +42,9 @@ public class ExitScreen implements Screen, Disposable
     /**
      * The dimensions of the buttons
      */
-    private static final int BUTTON_DIMENSION = 256;
+    private static final int BUTTON_DIMENSION = 96;
+    
+    private static final float FONT_SIZE = 48f; 
     
     public ExitScreen(final ScreenManager screen)
     {
@@ -52,8 +54,8 @@ public class ExitScreen implements Screen, Disposable
         //create paint text object
         this.paint = new Paint(screen.getPaint());
         this.paint.setColor(Color.WHITE);
-        this.paint.setTextSize(64F);
-        
+        this.paint.setTextSize(FONT_SIZE);
+
         //create temporary rectangle
         Rect tmp = new Rect();
         
@@ -96,15 +98,20 @@ public class ExitScreen implements Screen, Disposable
         //do we need anything here
     }
     
-    @Override
-    public boolean update(final MotionEvent event, final float x, final float y) throws Exception
+    private ScreenManager getScreen()
     {
-        if (event.getAction() == MotionEvent.ACTION_UP)
+    	return this.screen;
+    }
+    
+    @Override
+    public boolean update(final int action, final float x, final float y) throws Exception
+    {
+        if (action == MotionEvent.ACTION_UP)
         {
             if (buttons.get(Assets.ImageMenuKey.Cancel).contains(x, y))
             {
                 //if cancel, go back to game
-                screen.setState(ScreenManager.State.Running);
+            	getScreen().setState(ScreenManager.State.Running);
                 
                 //play sound effect
                 Audio.play(Assets.AudioMenuKey.Selection);
@@ -114,8 +121,19 @@ public class ExitScreen implements Screen, Disposable
             }
             else if (buttons.get(Assets.ImageMenuKey.Confirm).contains(x, y))
             {
+                //determine if anything needs to be done depending on the game mode
+                switch (getScreen().getScreenOptions().getIndex(OptionsScreen.Key.Mode))
+                {
+        	        case OptionsScreen.MODE_CHALLENGE:
+        	        	getScreen().getScreenGame().getGame().getLevelSelect().setSelection(false);
+        	        	break;
+        	        	
+                	default:
+                		break;
+                }
+            	
                 //if confirm, go back to menu
-                screen.setState(ScreenManager.State.Ready);
+                getScreen().setState(ScreenManager.State.Ready);
                 
                 //play sound effect
                 Audio.play(Assets.AudioMenuKey.Selection);

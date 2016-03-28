@@ -4,8 +4,9 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Rect;
-import android.util.SparseArray;
 import android.view.MotionEvent;
+
+import java.util.HashMap;
 
 import com.gamesbykevin.androidframework.awt.Button;
 import com.gamesbykevin.androidframework.resources.Audio;
@@ -16,6 +17,7 @@ import com.gamesbykevin.androidframework.screen.Screen;
 import com.gamesbykevin.fallingblocks.MainActivity;
 import com.gamesbykevin.fallingblocks.assets.Assets;
 import com.gamesbykevin.fallingblocks.panel.GamePanel;
+import com.gamesbykevin.fallingblocks.player.stats.Stats;
 
 /**
  * The game over screen
@@ -49,7 +51,17 @@ public class GameoverScreen implements Screen, Disposable
     /**
      * The text to display for the new game
      */
-    private static final String BUTTON_TEXT_NEW_GAME = "New Game";
+    private static final String BUTTON_TEXT_NEW_GAME = "New";
+    
+    /**
+     * The text to display for the next level
+     */
+    private static final String BUTTON_TEXT_NEXT_LEVEL = "Next";
+    
+    /**
+     * The text to display for to retry the level
+     */
+    private static final String BUTTON_TEXT_RETRY_LEVEL = "Retry";
     
     /**
      * The text to display for the menu
@@ -57,12 +69,13 @@ public class GameoverScreen implements Screen, Disposable
     private static final String BUTTON_TEXT_MENU = "Menu";
     
     //list of buttons
-    private SparseArray<Button> buttons;
+    private HashMap<Key, Button> buttons;
     
     //buttons to access each button list
-    public static final int INDEX_BUTTON_NEW = 0;
-    public static final int INDEX_BUTTON_MENU = 1;
-    public static final int INDEX_BUTTON_RATE = 2;
+    private enum Key
+    {
+    	Action, Menu, Rate
+    }
     
     public GameoverScreen(final ScreenManager screen)
     {
@@ -70,30 +83,30 @@ public class GameoverScreen implements Screen, Disposable
         this.screen = screen;
         
         //create buttons hash map
-        this.buttons = new SparseArray<Button>();
+        this.buttons = new HashMap<Key, Button>();
         
         //the start location of the button
         int y = ScreenManager.BUTTON_Y;
         int x = ScreenManager.BUTTON_X;
 
         //create our buttons
-        addButton(x, y, INDEX_BUTTON_NEW, BUTTON_TEXT_NEW_GAME);
+        addButton(x, y, Key.Action, BUTTON_TEXT_NEW_GAME);
         
         y += ScreenManager.BUTTON_Y_INCREMENT;
-        addButton(x, y, INDEX_BUTTON_MENU, BUTTON_TEXT_MENU);
+        addButton(x, y, Key.Menu, BUTTON_TEXT_MENU);
         
         y += ScreenManager.BUTTON_Y_INCREMENT;
-        addButton(x, y, INDEX_BUTTON_RATE, MenuScreen.BUTTON_TEXT_RATE_APP);
+        addButton(x, y, Key.Rate, MenuScreen.BUTTON_TEXT_RATE_APP);
     }
     
     /**
      * Add button to our list
      * @param x desired x-coordinate
      * @param y desired y-coordinate
-     * @param index Position to place in our array list
+     * @param key Unique key to access button
      * @param description The text description to add
      */
-    private void addButton(final int x, final int y, final int index, final String description)
+    private void addButton(final int x, final int y, final Key key, final String description)
     {
     	//create new button
     	Button button = new Button(Images.getImage(Assets.ImageMenuKey.Button));
@@ -109,10 +122,15 @@ public class GameoverScreen implements Screen, Disposable
     	
     	//add the text description
     	button.addDescription(description);
-    	button.positionText(screen.getPaint());
+    	button.positionText(getScreen().getPaint());
     	
     	//add button to the list
-    	this.buttons.put(index, button);
+    	this.buttons.put(key, button);
+    }
+    
+    private ScreenManager getScreen()
+    {
+    	return this.screen;
     }
     
     /**
@@ -131,8 +149,9 @@ public class GameoverScreen implements Screen, Disposable
     /**
      * Assign the message
      * @param message The message we want displayed
+     * @param success Did we win (true) or lose (false)?
      */
-    public void setMessage(final String message)
+    public void setMessage(final String message, final boolean success)
     {
         //assign the message
         this.message = message;
@@ -146,7 +165,7 @@ public class GameoverScreen implements Screen, Disposable
 	        //assign metrics
         	paint = new Paint();
         	paint.setColor(Color.WHITE);
-        	paint.setTextSize(48f);
+        	paint.setTextSize(Stats.STAT_FONT_SIZE);
 	        paint.setTypeface(Font.getFont(Assets.FontGameKey.Default));
         }
         
@@ -156,6 +175,24 @@ public class GameoverScreen implements Screen, Disposable
         //calculate the position of the message
         messageX = (GamePanel.WIDTH / 2) - (tmp.width() / 2);
         messageY = (int)(GamePanel.HEIGHT * .12);
+        
+        //determine the buttons depending on the mode selected
+        switch (getScreen().getScreenOptions().getIndex(OptionsScreen.Key.Mode))
+        {
+	        case OptionsScreen.MODE_CHALLENGE:
+	        	buttons.get(Key.Action).setDescription(0, (success) ? BUTTON_TEXT_NEXT_LEVEL : BUTTON_TEXT_RETRY_LEVEL);
+	        	break;
+	        	
+        	default:
+        		buttons.get(Key.Action).setDescription(0, BUTTON_TEXT_NEW_GAME);
+        		break;
+        }
+        
+        //make sure each button is positioned correctly
+        for (Button button : buttons.values())
+        {
+        	button.positionText(getScreen().getPaint());
+        }
     }
     
     /**
@@ -177,36 +214,36 @@ public class GameoverScreen implements Screen, Disposable
     }
     
     @Override
-    public boolean update(final MotionEvent event, final float x, final float y) throws Exception
+    public boolean update(final int action, final float x, final float y) throws Exception
     {
         //if we aren't displaying the menu, return false
         if (!hasDisplay())
             return false;
         
-        if (event.getAction() == MotionEvent.ACTION_UP)
+        if (action == MotionEvent.ACTION_UP)
         {
-        	for (int index = 0; index < buttons.size(); index++)
+        	for (Key key : Key.values())
         	{
         		//get the current button
-        		Button button = buttons.get(index);
+        		Button button = buttons.get(key);
         		
         		//if we did not click this button skip to the next
         		if (!button.contains(x, y))
         			continue;
         		
                 //remove message
-                setMessage("");
+                setMessage("", false);
                 
         		//handle each button different
-        		switch (index)
+        		switch (key)
         		{
-	        		case INDEX_BUTTON_NEW:
+	        		case Action:
 	                    
-	                    //reset with the same settings
-	                    screen.getScreenGame().getGame().reset();
+	                    //reset with the current settings
+	                    getScreen().getScreenGame().getGame().reset();
 	                    
 	                    //move back to the game
-	                    screen.setState(ScreenManager.State.Running);
+	                    getScreen().setState(ScreenManager.State.Running);
 	                    
 	                    //play sound effect
 	                    Audio.play(Assets.AudioMenuKey.Selection);
@@ -214,10 +251,21 @@ public class GameoverScreen implements Screen, Disposable
 	                    //we don't request additional motion events
 	                    return false;
 
-	        		case INDEX_BUTTON_MENU:
+	        		case Menu:
 	                    
+	                    //determine if anything needs to be done depending on the game mode
+	                    switch (getScreen().getScreenOptions().getIndex(OptionsScreen.Key.Mode))
+	                    {
+	            	        case OptionsScreen.MODE_CHALLENGE:
+	            	        	getScreen().getScreenGame().getGame().getLevelSelect().setSelection(false);
+	            	        	break;
+	            	        	
+	                    	default:
+	                    		break;
+	                    }
+	        			
 	                    //move to the main menu
-	                    screen.setState(ScreenManager.State.Ready);
+	                    getScreen().setState(ScreenManager.State.Ready);
 	                    
 	                    //play sound effect
 	                    Audio.play(Assets.AudioMenuKey.Selection);
@@ -225,19 +273,19 @@ public class GameoverScreen implements Screen, Disposable
 	                    //we don't request additional motion events
 	                    return false;
 	        			
-	        		case INDEX_BUTTON_RATE:
+	        		case Rate:
 	                    
 	                    //play sound effect
 	                    Audio.play(Assets.AudioMenuKey.Selection);
 	                    
 	                    //go to rate game page
-	                    screen.getPanel().getActivity().openWebpage(MainActivity.WEBPAGE_RATE_URL);
+	                    getScreen().getPanel().getActivity().openWebpage(MainActivity.WEBPAGE_RATE_URL);
 	                    
 	                    //we don't request additional motion events
 	                    return false;
 	        			
         			default:
-        				throw new Exception("Index not setup here: " + index);
+        				throw new Exception("Key not setup here: " + key);
         		}
         	}
         }
@@ -276,9 +324,9 @@ public class GameoverScreen implements Screen, Disposable
                 canvas.drawText(this.message, messageX, messageY, paint);
         
             //render the buttons
-            for (int index = 0; index < buttons.size(); index++)
+            for (Key key : Key.values())
             {
-            	buttons.get(index).render(canvas, screen.getPaint());
+            	buttons.get(key).render(canvas, getScreen().getPaint());
             }
         }
     }
@@ -291,12 +339,12 @@ public class GameoverScreen implements Screen, Disposable
         
         if (buttons != null)
         {
-	        for (int index = 0; index < buttons.size(); index++)
+	        for (Key key : Key.values())
 	        {
-	        	if (buttons.get(index) != null)
+	        	if (buttons.get(key) != null)
 	        	{
-	        		buttons.get(index).dispose();
-	        		buttons.setValueAt(index, null);
+	        		buttons.get(key).dispose();
+	        		buttons.put(key, null);
 	        	}
 	        }
 	        

@@ -9,6 +9,7 @@ import com.gamesbykevin.fallingblocks.board.piece.Piece;
 import com.gamesbykevin.fallingblocks.panel.GamePanel;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 /**
  * This class will contain helper methods
@@ -16,10 +17,40 @@ import java.util.List;
  */
 public final class BoardHelper 
 {
+	/**
+	 * The limit of challenge blocks for each row
+	 */
+	private static final int CHALLENGE_BLOCKS_PER_ROW = 6;
+	
+	/**
+	 * The row where we start adding challenge blocks
+	 */
+	private static final int CHALLENGE_BLOCK_START_ROW = 4;
+	
     /**
      * No height value
      */
     private static final int NO_HEIGHT = 0;
+    
+    /**
+     * The location of the cleared block on the sprite sheet
+     */
+    private static final int CLEARED_BLOCK_COL = 4;
+    
+    /**
+     * The location of the cleared block on the sprite sheet
+     */
+    private static final int CLEARED_BLOCK_ROW = 1;
+    
+    /**
+     * The location of the challenge block on the sprite sheet
+     */
+    private static final int CHALLENGE_BLOCK_COL = 5;
+    
+    /**
+     * The location of the challenge block on the sprite sheet
+     */
+    private static final int CHALLENGE_BLOCK_ROW = 1;
     
     /**
      * Calculate the aggregate height
@@ -147,7 +178,7 @@ public final class BoardHelper
         for (Piece.Type type : Piece.Type.values())
         {
             //we will ignore the cleared type for now
-            if (type == Piece.Type.Cleared)
+            if (Piece.ignoreType(type))
                 continue;
             
             //pick random index
@@ -168,11 +199,18 @@ public final class BoardHelper
         }
         
         //here is where the cleared animation is
-        final int x = (4 * Block.DIMENSION_ANIMATION);
-        final int y = (1 * Block.DIMENSION_ANIMATION);
+        int x = (CLEARED_BLOCK_COL * Block.DIMENSION_ANIMATION);
+        int y = (CLEARED_BLOCK_ROW * Block.DIMENSION_ANIMATION);
         
-        //add the cleared animation last
+        //add the cleared animation finally
         board.getSpritesheet().add(Piece.Type.Cleared, new Animation(Images.getImage(Assets.ImageGameKey.Blocks), x, y, Block.DIMENSION_ANIMATION, Block.DIMENSION_ANIMATION));
+        
+        //here is where the challenge animation is
+        x = (CHALLENGE_BLOCK_COL * Block.DIMENSION_ANIMATION);
+        y = (CHALLENGE_BLOCK_ROW * Block.DIMENSION_ANIMATION);
+        
+        //add the challenge animation finally
+        board.getSpritesheet().add(Piece.Type.Challenge, new Animation(Images.getImage(Assets.ImageGameKey.Blocks), x, y, Block.DIMENSION_ANIMATION, Block.DIMENSION_ANIMATION));
     }
     
     /**
@@ -279,7 +317,8 @@ public final class BoardHelper
     {
         for (int col = 0; col < board.getBlocks()[0].length; col++)
         {
-            if (board.getBlock(col, row) != null)
+        	//make sure block exists and we aren't supposed to ignore
+            if (board.getBlock(col, row) != null && !Piece.ignoreType(board.getBlock(col, row).getType()))
             {
                 //get the block at this location
                 Block block = board.getBlock(col, row);
@@ -313,8 +352,8 @@ public final class BoardHelper
             //start at the bottom and move north
             for (int row = board.getBlocks().length - 2; row >= 0; row--)
             {
-                //if the current row is not empty and the one below it is
-                if (!hasEmptyRow(board, row) && hasEmptyRow(board, row + 1))
+                //if the current row is not empty and the one below it is and the one below doesn't have any challenge blocks
+                if (!hasEmptyRow(board, row) && hasEmptyRow(board, row + 1) && getCountChallenge(board, row + 1) < 1)
                 {
                     //move the blocks in the current row to the row below
                     dropRow(board, row);
@@ -336,11 +375,126 @@ public final class BoardHelper
         for (int col = 0; col < board.getBlocks()[0].length; col++)
         {
             //if a block exists the row is not empty
-            if (board.getBlock(col, row) != null)
+            if (board.getBlock(col, row) != null && !Piece.ignoreType(board.getBlock(col, row).getType()))
                 return false;
         }
         
         //all blocks are empty return true
         return true;
+    }
+    
+    /**
+     * Populate the board for the challenge mode
+     * @param board The board we want to change
+     * @param levelIndex The current assigned level
+     */
+    public static final void populateChallenge(final Board board, final int levelIndex)
+    {
+    	//the number of challenge blocks allowed
+    	final int limit = (levelIndex + 1) * 2;
+    	
+    	//the maximum amount of challenge blocks possible
+    	final int max = (Board.ROWS - CHALLENGE_BLOCK_START_ROW) * CHALLENGE_BLOCKS_PER_ROW;
+    	
+    	//create list of available rows where we can spawn challenge blocks
+    	List<Integer> options = new ArrayList<Integer>();
+    	
+    	//what is our limit
+    	int end = Board.ROWS - ((int)(limit / CHALLENGE_BLOCKS_PER_ROW) + 2);
+    	
+    	//make sure we stay within bounds
+    	if (end < CHALLENGE_BLOCK_START_ROW)
+    		end = CHALLENGE_BLOCK_START_ROW;
+    	
+    	//populate list of possible rows
+    	for (int row = Board.ROWS - 1; row >= end; row--)
+    	{
+    		options.add(row);
+    	}
+    	
+    	//continue until we met our limit or the max allowed or we run out of rows to place blocks
+    	while (getCountChallenge(board) < limit && getCountChallenge(board) < max && !options.isEmpty())
+    	{
+    		//pick a random index
+    		final int index = GamePanel.RANDOM.nextInt(options.size());
+    		
+    		//get that row
+    		final int row = options.get(index);
+    		
+    		//if a single row has reached the limit
+    		if (getCountChallenge(board, row) >= CHALLENGE_BLOCKS_PER_ROW)
+    		{
+    			//remove that row
+    			options.remove(index);
+    		}
+    		else
+    		{
+    			//possible columns to choose from
+    			final List<Integer> columns = new ArrayList<Integer>();
+    			
+    			for (int col = 0; col < Board.COLS; col++)
+    			{
+    				//if there is no block it is a possibility
+    				if (board.getBlocks()[row][col] == null)
+    					columns.add(col);
+    			}
+    			
+    			//pick random column
+    			final int column = columns.get(GamePanel.RANDOM.nextInt(columns.size()));
+    			
+    			//create our challenge block
+    			Block block = new Block(column, row, UUID.randomUUID(), Piece.Type.Challenge);
+    			
+    			//set the block dimension(s)
+    			block.setWidth(Block.DIMENSION_LARGE);
+    			block.setHeight(Block.DIMENSION_LARGE);
+    			
+    			//place challenge block at our chosen location
+    			board.setBlock(column, row, block);
+    		}
+    	}
+    }
+    
+    /**
+     * Count the challenge blocks
+     * @param board The board we want to check
+     * @return The total number of challenge blocks
+     */
+    public static final int getCountChallenge(final Board board)
+    {
+    	//track the count
+    	int count = 0;
+    	
+    	for (int row = 0; row < board.getBlocks().length; row++)
+    	{
+    		count += getCountChallenge(board, row);
+    	}
+    	
+    	//return result
+    	return count;
+    }
+    
+    /**
+     * Count the challenge blocks
+     * @param board The board we want to check
+     * @param row The row we want to count
+     * @return The total number of challenge blocks
+     */
+    public static final int getCountChallenge(final Board board, final int row)
+    {
+    	//track the count
+    	int count = 0;
+    	
+    	//check each column
+		for (int col = 0; col < board.getBlocks()[0].length; col++)
+		{
+			//if block exists and is a challenge add to our count
+			if (board.getBlock(col, row) != null && 
+				board.getBlock(col, row).getType() == Piece.Type.Challenge)
+				count++;
+		}
+    	
+    	//return result
+    	return count;
     }
 }

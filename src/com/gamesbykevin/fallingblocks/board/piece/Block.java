@@ -24,17 +24,17 @@ public final class Block extends Entity implements Disposable
     /**
      * The pixel dimension of a regular size block
      */
-    public static final int DIMENSION_REGULAR = 48;
+    public static final int DIMENSION_REGULAR = 24;
     
     /**
      * The pixel dimension of a regular size block
      */
-    public static final int DIMENSION_SMALL = 24;
+    public static final int DIMENSION_SMALL = 12;
     
     /**
      * The dimension of a large size block
      */
-    public static final int DIMENSION_LARGE = 64;
+    public static final int DIMENSION_LARGE = 32;
     
     //the type of piece this block belongs to
     private Piece.Type type;

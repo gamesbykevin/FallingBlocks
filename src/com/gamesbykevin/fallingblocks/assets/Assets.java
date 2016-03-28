@@ -86,14 +86,19 @@ public class Assets
     public enum ImageGameKey
     {
     	Blocks,
+    	LevelComplete,
+    	PageNext,
     	Exit,
     	Fall,
     	Left,
+    	LevelLocked,
     	Mute,
+    	LevelOpen,
     	Pause,
     	Right,
     	Rotate,
-    	Unmute
+    	Unmute,
+    	PagePrevious
     }
     
     /**
@@ -123,8 +128,10 @@ public class Assets
         CompletedLine,
         GameoverLose, 
         GameoverWin,
+        InvalidLevelSelect,
         MusicVs,
         MusicSingle,
+        MusicChallenge,
         PiecePlace,
         PieceRotate
     }

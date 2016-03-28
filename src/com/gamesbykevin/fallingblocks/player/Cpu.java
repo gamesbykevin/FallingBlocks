@@ -28,7 +28,7 @@ public final class Cpu extends Player
     //holes score weight
     private static final double WEIGHT_HOLES = -0.46544;
     
-    //bumpiness score weight
+    //bumpi-ness score weight
     private static final double WEIGHT_BUMPINESS = -0.24077;
     
     public Cpu(final boolean multiplayer) throws Exception

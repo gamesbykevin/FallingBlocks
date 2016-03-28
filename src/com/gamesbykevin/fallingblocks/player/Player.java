@@ -3,6 +3,7 @@ package com.gamesbykevin.fallingblocks.player;
 import android.graphics.Canvas;
 
 import com.gamesbykevin.androidframework.resources.Disposable;
+
 import com.gamesbykevin.androidframework.resources.Audio;
 import com.gamesbykevin.fallingblocks.assets.Assets;
 
@@ -30,6 +31,11 @@ public abstract class Player extends PlayerHelper implements IPlayer, Disposable
     
     //are we playing multiplayer
     private final boolean multiplayer;
+    
+    /**
+     * y-coordinate for the human
+     */
+    private static final int HUMAN_Y = 650;
     
     /**
      * Create a new player
@@ -61,7 +67,7 @@ public abstract class Player extends PlayerHelper implements IPlayer, Disposable
             {
                 //position board
                 getBoard().setX(START_X);
-                getBoard().setY(1300 - START_Y - getBoard().getHeight());
+                getBoard().setY(HUMAN_Y - START_Y - getBoard().getHeight());
 
                 //position stats
                 getStats().setX(getBoard().getX() + getBoard().getWidth() + START_X);
@@ -70,8 +76,8 @@ public abstract class Player extends PlayerHelper implements IPlayer, Disposable
             else
             {
                 //position board
-                getBoard().setX((Block.DIMENSION_REGULAR * Board.COLS) + (START_X * 15));
-                getBoard().setY(getStats().getHeight() + (START_Y * 2));
+                getBoard().setX((Block.DIMENSION_REGULAR * Board.COLS) + (START_X * 7.5));
+                getBoard().setY(getStats().getHeight() + (START_Y * 1));
 
                 //position stats
                 getStats().setX(getBoard());
@@ -283,7 +289,7 @@ public abstract class Player extends PlayerHelper implements IPlayer, Disposable
                         //move back up 1 row
                         getCurrent().decreaseRow();
                         
-                        //if the piece is still in collision with the board, we have gameover
+                        //if the piece is still in collision with the board, we have game over
                         if (getBoard().hasBlock(getCurrent()))
                         {
                             //flag game over
