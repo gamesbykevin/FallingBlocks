@@ -29,6 +29,9 @@ public abstract class Player extends PlayerHelper implements IPlayer, Disposable
     //our stats object
     private Stats stats;
     
+    //how bad is this player penalized?
+    private int penalty;
+    
     //are we playing multiplayer
     private final boolean multiplayer;
     
@@ -107,6 +110,32 @@ public abstract class Player extends PlayerHelper implements IPlayer, Disposable
         resetTime();
     }
     
+    /**
+     * Has the player been penalized?
+     * @return true if there is at least 1 penalty, false otherwise
+     */
+    protected boolean hasPenalty()
+    {
+    	return (this.penalty > 0);
+    }
+    
+    /**
+     * Reset the penalty
+     */
+    protected void resetPenalty()
+    {
+    	this.penalty = 0;
+    }
+    
+    /**
+     * Penalize the player
+     * @param penalty The number of lines to penalize
+     */
+    public void penalize(final int penalty)
+    {
+    	this.penalty += penalty;
+    }
+    
     protected boolean isMultiPlayer()
     {
     	return this.multiplayer;
@@ -157,9 +186,11 @@ public abstract class Player extends PlayerHelper implements IPlayer, Disposable
             //rotation was successful
             return true;
         }
-        
-        //no rotation occurred
-        return false;
+        else
+        {
+	        //no rotation occurred
+	        return false;
+        }
     }
     
     
@@ -200,6 +231,10 @@ public abstract class Player extends PlayerHelper implements IPlayer, Disposable
             
             //reset timer
             resetTime();
+            
+            //if the block is already occupied, the game is over
+            if (getBoard().hasBlock(getCurrent()))
+            	getBoard().setGameover(true);
         }
         
         //render the next piece, if exists
@@ -267,8 +302,20 @@ public abstract class Player extends PlayerHelper implements IPlayer, Disposable
             //make sure we have pieces
             if (getCurrent() == null || getNext() == null)
             {
-                //create the piece
-                createPiece();
+            	//if this player is penalized
+            	if (hasPenalty())
+            	{
+            		//add penalty
+            		BoardHelper.addPenalty(getBoard(), isHuman(), this.penalty);
+            		
+            		//turn penalty off
+            		resetPenalty();
+            	}
+            	else
+            	{
+                    //create the piece
+                    createPiece();
+            	}
             }
             else
             {
@@ -289,8 +336,8 @@ public abstract class Player extends PlayerHelper implements IPlayer, Disposable
                         //move back up 1 row
                         getCurrent().decreaseRow();
                         
-                        //if the piece is still in collision with the board, we have game over
-                        if (getBoard().hasBlock(getCurrent()))
+                        //if the piece is still in collision with the board or not in bounds, we have game over
+                        if (getBoard().hasBlock(getCurrent()) || !getCurrent().hasBounds())
                         {
                             //flag game over
                             getBoard().setGameover(true);
@@ -299,8 +346,16 @@ public abstract class Player extends PlayerHelper implements IPlayer, Disposable
                             return;
                         }
                         
-                        //add piece to board
-                        getBoard().add(getCurrent());
+                        try
+                        {
+	                        //add piece to board
+	                        getBoard().add(getCurrent());
+                        }
+                        catch (ArrayIndexOutOfBoundsException e)
+                        {
+                        	//if there is an out of bounds exception the game is over
+                        	getBoard().setGameover(true);
+                        }
                         
                         //if there is at least 1 completed row, flag complete
                         if (BoardHelper.getCompletedRowCount(getBoard()) > 0)

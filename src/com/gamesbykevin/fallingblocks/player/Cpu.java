@@ -178,8 +178,6 @@ public final class Cpu extends Player
                         //now that we are done scoring we can remove the piece from the board
                         getBoard().remove(getCurrent());
                         
-                        
-                        
                         //no need to check any further rows, exit loop to check the next column
                         break;
                     }

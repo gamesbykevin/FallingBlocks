@@ -134,6 +134,7 @@ public class Game implements IGame
     	{
 	    	case OptionsScreen.MODE_FREE:
 	    	case OptionsScreen.MODE_VIEW_CPU:
+	    	case OptionsScreen.MODE_ATTACK:
 	    		Audio.play(Assets.AudioGameKey.MusicSingle, true);
 	    		break;
 	    		

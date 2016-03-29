@@ -98,7 +98,7 @@ public final class Stats extends Entity implements IStats
     public static final String CHALLENGE_STAT_DESCRIPTION = "Blocks";
     
     //do we extend the size of the window
-    private final boolean extendWindow;
+    private boolean extendWindow;
     
     /**
      * Create new stats window to track the player's stats
@@ -115,9 +115,17 @@ public final class Stats extends Entity implements IStats
         //set stat text description
         setStatDescription(DEFAULT_STAT_DESCRIPTION);
         
-        //assign decision
-        this.extendWindow = extendWindow;
+        //do we extend the window
+        setExtendWindow(extendWindow);
         
+        //create new paint object
+        this.paint = new Paint();
+    }
+    
+    public void setExtendWindow(final boolean extendWindow)
+    {
+    	this.extendWindow = extendWindow;
+    	
         if (this.extendWindow)
         {
             //add extra height for the health bar
@@ -130,9 +138,6 @@ public final class Stats extends Entity implements IStats
             super.setWidth(WIDTH);
             super.setHeight(HEIGHT_NORMAL);
         }
-        
-        //create new paint object
-        this.paint = new Paint();
     }
     
     @Override

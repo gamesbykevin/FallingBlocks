@@ -20,6 +20,7 @@ import static com.gamesbykevin.fallingblocks.screen.OptionsScreen.MODE_FREE;
 import static com.gamesbykevin.fallingblocks.screen.OptionsScreen.MODE_VIEW_CPU;
 import static com.gamesbykevin.fallingblocks.screen.OptionsScreen.MODE_VS_CPU;
 import static com.gamesbykevin.fallingblocks.screen.OptionsScreen.MODE_CHALLENGE;
+import static com.gamesbykevin.fallingblocks.screen.OptionsScreen.MODE_ATTACK;
 
 import com.gamesbykevin.fallingblocks.screen.ScreenManager;
 
@@ -57,10 +58,10 @@ public class Controller implements IController
      */
     private static final int ICON_DIMENSION = 75;
 
-    private static final int BUTTON_HORIZONTAL_WIDTH = 87;
-    private static final int BUTTON_HORIZONTAL_HEIGHT = 70;
-    private static final int BUTTON_CIRCLE_WIDTH = 80;
-    private static final int BUTTON_CIRCLE_HEIGHT = 80;
+    private static final int BUTTON_HORIZONTAL_WIDTH = 97;
+    private static final int BUTTON_HORIZONTAL_HEIGHT = 79;
+    private static final int BUTTON_CIRCLE_WIDTH = 90;
+    private static final int BUTTON_CIRCLE_HEIGHT = 90;
     
     /**
      * Default Constructor
@@ -163,14 +164,7 @@ public class Controller implements IController
             if (!player.isHuman())
                 continue;
             
-            //check if the touch screen is pressed down
-            if (action == MotionEvent.ACTION_DOWN)
-            {
-                //if the player is pressing down, make the time expire to drop the piece
-                if (buttons.get(Assets.ImageGameKey.Fall).isVisible() && buttons.get(Assets.ImageGameKey.Fall).contains(x, y))
-                    player.setAction(Player.Action.MOVE_DOWN);
-            }
-            else if (action == MotionEvent.ACTION_MOVE)
+            if (action == MotionEvent.ACTION_MOVE)
             {
             	//if we move off the down button remove it
                 if (!buttons.get(Assets.ImageGameKey.Fall).contains(x, y))
@@ -179,7 +173,15 @@ public class Controller implements IController
                     player.setAction(null);
                 }
             }
-            else if (action == MotionEvent.ACTION_UP)
+            
+            if (action == MotionEvent.ACTION_DOWN)
+            {
+                //if the player is pressing down, make the time expire to drop the piece
+                if (buttons.get(Assets.ImageGameKey.Fall).isVisible() && buttons.get(Assets.ImageGameKey.Fall).contains(x, y))
+                    player.setAction(Player.Action.MOVE_DOWN);
+            }
+            
+            if (action == MotionEvent.ACTION_UP)
             {
                 //if the up control was released, we will rotate the piece
                 if (buttons.get(Assets.ImageGameKey.Rotate).isVisible() && buttons.get(Assets.ImageGameKey.Rotate).contains(x, y))
@@ -255,6 +257,7 @@ public class Controller implements IController
 	    		
 	    	//multi-player
 	    	case MODE_VS_CPU:
+	    	case MODE_ATTACK:
 	    		
 	        	//set start
 	        	x = MULTI_ICON_START_X;
@@ -284,11 +287,11 @@ public class Controller implements IController
         //assign the button locations
         this.buttons.get(Assets.ImageGameKey.Left).setX(CONTROLLER_START_X);
         this.buttons.get(Assets.ImageGameKey.Left).setY(CONTROLLER_START_Y);
-        this.buttons.get(Assets.ImageGameKey.Right).setX(buttons.get(Assets.ImageGameKey.Left).getX() + (BUTTON_HORIZONTAL_WIDTH * 1.5));
+        this.buttons.get(Assets.ImageGameKey.Right).setX(buttons.get(Assets.ImageGameKey.Left).getX() + (BUTTON_HORIZONTAL_WIDTH * 1.25));
         this.buttons.get(Assets.ImageGameKey.Right).setY(CONTROLLER_START_Y);
-        this.buttons.get(Assets.ImageGameKey.Fall).setX(SINGLE_ICON_START_X - (BUTTON_CIRCLE_WIDTH * 1.15));
+        this.buttons.get(Assets.ImageGameKey.Fall).setX(SINGLE_ICON_START_X - (BUTTON_CIRCLE_WIDTH * .95));
         this.buttons.get(Assets.ImageGameKey.Fall).setY(CONTROLLER_START_Y);
-        this.buttons.get(Assets.ImageGameKey.Rotate).setX(buttons.get(Assets.ImageGameKey.Fall).getX() + (BUTTON_CIRCLE_WIDTH * 1.5));
+        this.buttons.get(Assets.ImageGameKey.Rotate).setX(buttons.get(Assets.ImageGameKey.Fall).getX() + (BUTTON_CIRCLE_WIDTH * 1.25));
         this.buttons.get(Assets.ImageGameKey.Rotate).setY(CONTROLLER_START_Y);
     	
         //set dimension

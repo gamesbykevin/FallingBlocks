@@ -366,7 +366,7 @@ public final class BoardHelper
     }
     
     /**
-     * Is the specified row empty
+     * Is the specified row empty?
      * @param row The row we want to check
      * @return true if all columns are empty for the given row, false otherwise
      */
@@ -497,4 +497,91 @@ public final class BoardHelper
     	//return result
     	return count;
     }
+    
+    /**
+     * Add penalty to the board.<br>
+     * Here we will push up all blocks by 1 row and add a row of random blocks at the bottom
+     * @param board Board we want to add penalty to
+     * @param human Is this player human? needed to determine block dimensions
+     * @param penalty The number of lines penalized
+     */
+    public static final void addPenalty(final Board board, final boolean human, int penalty)
+    {
+    	while (penalty > 0)
+    	{
+    		//if there are already blocks at the first row, the game will be over
+    		if (!hasEmptyRow(board, 0))
+    			board.setGameover(true);
+    		
+	    	//check each row
+	    	for (int row = 1; row < board.getBlocks().length; row++)
+	    	{
+	        	//check each column
+	    		for (int col = 0; col < board.getBlocks()[0].length; col++)
+	    		{
+	                //get the block at the current location
+	                Block block = board.getBlock(col, row);
+	                
+	                //make sure the block exists before updating
+	                if (block != null)
+	                {
+		                //make sure the new row location is updated
+		                block.setRow(row - 1);
+		    			
+						//now assign block to the correct row
+						board.setBlock(col, row - 1, block);
+						
+						//finally remove it from the current
+						board.setBlock(col, row, null);
+	                }
+	    		}
+	    	}
+	    	
+			//possible columns to choose from
+			final List<Integer> columns = new ArrayList<Integer>();
+			
+			//add columns to list that we will pick from
+			for (int col = 0; col < Board.COLS; col++)
+			{
+				columns.add(col);
+			}
+	    	
+			//continue until we have met the blocks per row requirement
+			while (columns.size() > Board.COLS - CHALLENGE_BLOCKS_PER_ROW)
+			{
+				//pick random index
+				final int index = GamePanel.RANDOM.nextInt(columns.size());
+				
+				//pick random column
+				final int column = columns.get(index);
+				
+				//block will be added to the last row
+				final int row = Board.ROWS - 1;
+				
+				//create our challenge block
+				Block block = new Block(column, row, UUID.randomUUID(), Piece.Type.Challenge);
+				
+				//dimensions will be different if human
+				if (human)
+				{
+					block.setWidth(Block.DIMENSION_REGULAR);
+					block.setHeight(Block.DIMENSION_REGULAR);
+				}
+				else
+				{
+					block.setWidth(Block.DIMENSION_SMALL);
+					block.setHeight(Block.DIMENSION_SMALL);
+				}
+				
+				//place challenge block at our chosen location
+				board.setBlock(column, row, block);
+				
+				//remove column from our list
+				columns.remove(index);
+		 	}
+			
+			//take away 1 penalty
+			penalty--;
+    	}
+   }
 }

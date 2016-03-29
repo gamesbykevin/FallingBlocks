@@ -74,6 +74,11 @@ public class OptionsScreen implements Screen, Disposable
      */
     public static final int MODE_CHALLENGE = 3;
     
+    /**
+     * Attack mode 
+     */
+    public static final int MODE_ATTACK = 4;
+    
     public OptionsScreen(final ScreenManager screen)
     {
         //our logo reference
@@ -181,6 +186,7 @@ public class OptionsScreen implements Screen, Disposable
         button.addDescription("Mode - View Cpu");
         button.addDescription("Mode - vs Cpu");
         button.addDescription("Mode - Challenge");
+        button.addDescription("Mode - Attack");
         button.setX(x);
         button.setY(y);
         this.buttons.put(Key.Mode, button);

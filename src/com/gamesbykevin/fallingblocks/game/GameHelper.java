@@ -4,6 +4,7 @@ import static com.gamesbykevin.fallingblocks.screen.OptionsScreen.MODE_CHALLENGE
 import static com.gamesbykevin.fallingblocks.screen.OptionsScreen.MODE_FREE;
 import static com.gamesbykevin.fallingblocks.screen.OptionsScreen.MODE_VIEW_CPU;
 import static com.gamesbykevin.fallingblocks.screen.OptionsScreen.MODE_VS_CPU;
+import static com.gamesbykevin.fallingblocks.screen.OptionsScreen.MODE_ATTACK;
 
 import com.gamesbykevin.androidframework.awt.Button;
 import com.gamesbykevin.androidframework.resources.Audio;
@@ -83,6 +84,7 @@ public final class GameHelper
 	        	
 	        //vs cpu mode
 	        case MODE_VS_CPU:
+	        case MODE_ATTACK:
 	        	game.getPlayers().add(new Human(true));
 	        	game.getPlayers().add(new Cpu(true));
 	        	
@@ -147,6 +149,16 @@ public final class GameHelper
     			//update stats
 	        	game.getHuman().getStats().setLines(BoardHelper.getCountChallenge(game.getHuman().getBoard()));
 	        	break;
+	        	
+	        case OptionsScreen.MODE_ATTACK:
+	        	
+	        	//we don't extend the window here
+	        	for (Player player : game.getPlayers())
+	        	{
+	        		player.getStats().setExtendWindow(false);
+	        		player.getStats().setStatDescription(Stats.DEFAULT_STAT_DESCRIPTION);
+	        	}
+	        	break;
         }
 	}
 	
@@ -197,8 +209,7 @@ public final class GameHelper
         	else
         	{
         		//mark this level as locked
-        		//game.getLevelSelect().setLocked(levelIndex, true);
-        		game.getLevelSelect().setLocked(levelIndex, false);
+        		game.getLevelSelect().setLocked(levelIndex, true);
         		
         		//mark this level as not completed
         		game.getLevelSelect().setCompleted(levelIndex, false);
@@ -317,6 +328,8 @@ public final class GameHelper
 	                    			break;
 	                    	}
 	                    }
+	                    
+	                    //no need to check the other players
 	                    break;
 	                }
 	                
@@ -341,9 +354,21 @@ public final class GameHelper
                     			player.getStats().setLines(BoardHelper.getCountChallenge(player.getBoard()));
                     			break;
                     			
+                    		case MODE_ATTACK:
+        	                    //get the opponent
+        	                    Player opponent = getOpponent(game, player);
+        	                    
+                    			//flag opponent to have blocks stacked
+        	                    opponent.penalize(player.getStats().getLines() - lines);
+        	                    
+    	                        //if the opponent stacked is human, vibrate phone
+    	                        if (opponent.isHuman())
+    	                        	game.vibrate();
+                    			break;
+                    			
                     		case MODE_VS_CPU:
         	                    //get the opponent
-        	                    final Player opponent = getOpponent(game, player);
+        	                    opponent = getOpponent(game, player);
         	                    
         	                    //if the opponent exists
         	                    if (opponent != null)
@@ -359,7 +384,7 @@ public final class GameHelper
         	                        player.getStats().setHealth(player.getStats().getHealth() + heal);
         	                        opponent.getStats().setHealth(opponent.getStats().getHealth() + damage);
         	                        
-        	                        //if the opponent received damage, vibrate phone
+        	                        //if the opponent received damage and is human, vibrate phone
         	                        if (opponent.isHuman())
         	                        	game.vibrate();
         	                    }
